@@ -325,7 +325,7 @@ function showErr(msg){const el=document.getElementById("err-msg");el.textContent
 document.getElementById("amt-input").addEventListener("keydown",  e=>{if(e.key==="Enter")submitEntry();});
 document.getElementById("note-input").addEventListener("keydown", e=>{if(e.key==="Enter")submitEntry();});
 
-async function submitEntry(){
+function submitEntry(){
   if(!selPerson)  return showErr("請選擇支出者");
   if(!selCat)     return showErr("請選擇類別");
   const amt=Number(document.getElementById("amt-input").value);
@@ -334,22 +334,23 @@ async function submitEntry(){
   const btn=document.getElementById("submit-btn");
   btn.disabled=true;btn.textContent="送出中…";
   const note=document.getElementById("note-input").value;
-  const payload={person:selPerson,category:selCat,categoryLabel:catLabel(selCat),amount:amt,note,month:MONTH};
-  try{
-    await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)});
-    // optimistically add locally so summary sheet shows immediately
-    entries.push({...payload,timestamp:new Date().toLocaleString("zh-TW")});
+  const payload={action:"write",person:selPerson,category:selCat,categoryLabel:catLabel(selCat),amount:amt,note:note,month:MONTH};
+  jsonpWrite(payload, function(){
+    // success
+    entries.push({person:selPerson,category:selCat,categoryLabel:catLabel(selCat),amount:amt,note:note,month:MONTH,timestamp:new Date().toLocaleString("zh-TW")});
     document.getElementById("amt-input").value="";
     document.getElementById("note-input").value="";
     selPerson="";selCat="";
     document.querySelectorAll(".person-btn").forEach(b=>b.className="person-btn");
     document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
+    btn.disabled=false;btn.textContent="送出記帳";
     updateDashTab();
     openSumSheet();
-    // re-sync from sheet after 2s to confirm write
     setTimeout(()=>fetchData(), 2000);
-  }catch{showToast("送出失敗，請重試","err");}
-  finally{btn.disabled=false;btn.textContent="送出記帳";}
+  }, function(err){
+    showToast("送出失敗："+err,"err");
+    btn.disabled=false;btn.textContent="送出記帳";
+  });
 }
 
 // ── summary sheet ──────────────────────────────────────────────────────
@@ -360,7 +361,33 @@ function openSumSheet(){
 }
 function closeSumSheet(){document.getElementById("sum-overlay").classList.add("hidden");}
 
-// ── fetch (JSONP) ──────────────────────────────────────────────────────
+// ── JSONP write ────────────────────────────────────────────────────────
+function jsonpWrite(params, onSuccess, onError){
+  const cbName = "gs_write_" + Date.now();
+  const script  = document.createElement("script");
+  const timer   = setTimeout(()=>{
+    cleanup();
+    (onError||function(){})("逾時");
+  }, 15000);
+  function cleanup(){
+    clearTimeout(timer);
+    delete window[cbName];
+    if(script.parentNode) script.parentNode.removeChild(script);
+  }
+  window[cbName] = function(data){
+    cleanup();
+    if(data && data.success) (onSuccess||function(){})();
+    else (onError||function(){})("寫入回應異常");
+  };
+  script.onerror = function(){
+    cleanup();
+    (onError||function(){})("連線失敗");
+  };
+  const qs = Object.entries({...params, callback: cbName, t: Date.now()})
+    .map(([k,v])=>encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&");
+  script.src = SCRIPT_URL + "?" + qs;
+  document.head.appendChild(script);
+}
 function fetchData(){
   isLoading=true;
   if(curTab==="dashboard") showDashState("loading");
@@ -670,17 +697,16 @@ async function doSettle(){
   const payer=btn.dataset.payer,recv=btn.dataset.recv,gap=Number(btn.dataset.gap);
   if(!gap||gap<=0){ hideSettleConfirm(); return; }
   okBtn.disabled=true;okBtn.textContent="記錄中…";
-  const payload={person:payer,category:"settle",categoryLabel:"結算",amount:gap,note:`${payer}→${recv}`,month:MONTH};
-  try{
-    await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)});
-    showToast("✓ 結算已送出，正在同步…","ok");
+  const payload={action:"write",person:payer,category:"settle",categoryLabel:"結算",amount:gap,note:`${payer}→${recv}`,month:MONTH};
+  jsonpWrite(payload, function(){
+    showToast("✓ 結算完成！正在同步…","ok");
     hideSettleConfirm();
-    // wait 1.5s for sheet to write, then re-fetch to confirm
-    setTimeout(()=>{ fetchData(); },1500);
-  }catch{
-    showToast("結算失敗，請重試","err");
     okBtn.disabled=false;okBtn.textContent="✓ 確認結算";
-  }
+    setTimeout(()=>fetchData(), 1500);
+  }, function(err){
+    showToast("結算失敗："+err,"err");
+    okBtn.disabled=false;okBtn.textContent="✓ 確認結算";
+  });
 }
 
 function updateDashTab(){
