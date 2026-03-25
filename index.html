@@ -611,9 +611,9 @@ function formatTimestamp(ts){
 
 function drawHistory(){
   const all = [...monthAll()].reverse();
-  const shown = historyExpanded ? all : all.slice(0, 20);
+  const shown = historyExpanded ? all : all.slice(0, 5);
   const btn = document.getElementById("history-toggle-btn");
-  if(all.length <= 20){
+  if(all.length <= 5){
     btn.style.display = "none";
   } else {
     btn.style.display = "block";
