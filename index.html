@@ -164,25 +164,6 @@ input[type=number]{-moz-appearance:textfield}
     </div>
 
     <div id="dash-content">
-      <div id="settle-card">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="#7A6BAA"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
-          <span style="font-size:13px;font-weight:700;color:#7A6BAA">本月結算</span>
-        </div>
-        <div class="settle-people" id="settle-people-area"></div>
-        <div class="settle-amount-box" id="settle-amount-box"></div>
-        <button id="settle-trigger-btn" style="width:100%;padding:13px;border-radius:12px;border:none;background:#7A6BAA;color:#fff;font-size:15px;font-weight:700;display:none" onclick="showSettleConfirm()">確認已完成轉帳</button>
-        <div id="settle-confirm-area" style="background:#fff;border:1.5px solid #7A6BAA;border-radius:12px;padding:16px;text-align:center;display:none">
-          <div style="font-size:14px;font-weight:700;color:#3E2A14;margin-bottom:4px">確定結算嗎？</div>
-          <div id="settle-confirm-desc" style="font-size:12px;color:#7A6048;margin-bottom:14px"></div>
-          <div style="display:flex;gap:10px">
-            <button class="ghost" style="flex:1;padding:11px;border-radius:10px" onclick="hideSettleConfirm()">取消</button>
-            <button id="settle-ok-btn" style="flex:2;padding:11px;border-radius:10px;border:none;background:#7A6BAA;color:#fff;font-size:14px;font-weight:700" onclick="doSettle()">✓ 確認結算</button>
-          </div>
-        </div>
-        <div id="settle-history" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(122,107,170,.15);display:none"></div>
-      </div>
-
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
           <div class="section-lbl" style="margin-bottom:0" id="summary-month-lbl"></div>
@@ -215,9 +196,31 @@ input[type=number]{-moz-appearance:textfield}
           <svg id="bar-svg" width="100%" style="display:block"></svg>
         </div>
         <div style="margin-top:20px">
-          <div class="section-lbl">最近記帳</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
+            <div class="section-lbl" style="margin-bottom:0">記帳明細</div>
+            <button id="history-toggle-btn" onclick="toggleHistory()" style="font-size:12px;color:#4A8F8A;background:transparent;border:none;padding:4px 0;cursor:pointer">顯示全部 ▾</button>
+          </div>
           <div id="history-list"></div>
         </div>
+      </div>
+
+      <div id="settle-card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="#7A6BAA"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+          <span style="font-size:13px;font-weight:700;color:#7A6BAA">累積結算</span>
+        </div>
+        <div class="settle-people" id="settle-people-area"></div>
+        <div class="settle-amount-box" id="settle-amount-box"></div>
+        <button id="settle-trigger-btn" style="width:100%;padding:13px;border-radius:12px;border:none;background:#7A6BAA;color:#fff;font-size:15px;font-weight:700;display:none" onclick="showSettleConfirm()">確認已完成轉帳</button>
+        <div id="settle-confirm-area" style="background:#fff;border:1.5px solid #7A6BAA;border-radius:12px;padding:16px;text-align:center;display:none">
+          <div style="font-size:14px;font-weight:700;color:#3E2A14;margin-bottom:4px">確定結算嗎？</div>
+          <div id="settle-confirm-desc" style="font-size:12px;color:#7A6048;margin-bottom:14px"></div>
+          <div style="display:flex;gap:10px">
+            <button class="ghost" style="flex:1;padding:11px;border-radius:10px" onclick="hideSettleConfirm()">取消</button>
+            <button id="settle-ok-btn" style="flex:2;padding:11px;border-radius:10px;border:none;background:#7A6BAA;color:#fff;font-size:14px;font-weight:700" onclick="doSettle()">✓ 確認結算</button>
+          </div>
+        </div>
+        <div id="settle-history" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(122,107,170,.15);display:none"></div>
       </div>
     </div>
   </div>
@@ -580,23 +583,63 @@ function drawBars(bycat){
   }).join("");
 }
 
+let historyExpanded = false;
+
+function toggleHistory(){
+  historyExpanded = !historyExpanded;
+  const btn = document.getElementById("history-toggle-btn");
+  btn.textContent = historyExpanded ? "收合 ▴" : "顯示全部 ▾";
+  drawHistory();
+}
+
+function formatTimestamp(ts){
+  if(!ts) return "";
+  const s = String(ts);
+  // ISO format
+  if(s.includes("T")){
+    const d = new Date(s);
+    const local = new Date(d.getTime() + 8*60*60*1000);
+    const mo = String(local.getUTCMonth()+1).padStart(2,"0");
+    const dy = String(local.getUTCDate()).padStart(2,"0");
+    const hr = String(local.getUTCHours()).padStart(2,"0");
+    const mn = String(local.getUTCMinutes()).padStart(2,"0");
+    return `${mo}/${dy} ${hr}:${mn}`;
+  }
+  // "2025/03/07 11:06:26" or similar
+  const m = s.match(/(\d{1,2})[\/\-](\d{1,2})\D+(\d{1,2}):(\d{2})/);
+  if(m) return `${String(m[1]).padStart(2,"0")}/${String(m[2]).padStart(2,"0")} ${m[3]}:${m[4]}`;
+  return s.slice(0,10);
+}
+
 function drawHistory(){
-  const all=[...monthAll()].reverse().slice(0,25);
-  document.getElementById("history-list").innerHTML=all.map(e=>{
-    const isS=e.category==="settle";
-    const color=isS?"#7A6BAA":(PC[e.person]||"#C97B3A");
-    const bg=isS?"#F0EEF8":(e.person==="安"?"#FEF4EA":"#EAF6F5");
-    const icon=isS
+  const all = [...monthAll()].reverse();
+  const shown = historyExpanded ? all : all.slice(0, 20);
+  const btn = document.getElementById("history-toggle-btn");
+  if(all.length <= 20){
+    btn.style.display = "none";
+  } else {
+    btn.style.display = "block";
+    btn.textContent = historyExpanded ? "收合 ▴" : `顯示全部 ${all.length} 筆 ▾`;
+  }
+  document.getElementById("history-list").innerHTML = shown.map(e=>{
+    const isS  = e.category==="settle";
+    const color= isS?"#7A6BAA":(PC[e.person]||"#C97B3A");
+    const bg   = isS?"#F0EEF8":(e.person==="安"?"#FEF4EA":"#EAF6F5");
+    const icon = isS
       ?`<svg width="16" height="16" viewBox="0 0 24 24" fill="#7A6BAA"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>`
       :`<svg width="18" height="18" viewBox="0 0 24 24" fill="${color}" opacity="0.8"><ellipse cx="12" cy="16" rx="5" ry="4"/><ellipse cx="7" cy="10" rx="2.5" ry="3"/><ellipse cx="17" cy="10" rx="2.5" ry="3"/><ellipse cx="5" cy="15" rx="2" ry="2.5"/><ellipse cx="19" cy="15" rx="2" ry="2.5"/></svg>`;
+    const ts = formatTimestamp(e.timestamp);
     return `<div class="hist-row">
       <div class="hist-icon" style="background:${bg};border:1px solid ${color}44">${icon}</div>
       <div style="flex:1;min-width:0">
         <div class="hist-cat">${e.categoryLabel||catLabel(e.category)}</div>
         ${e.note?`<div class="hist-note">${e.note}</div>`:""}
+        ${ts?`<div style="font-size:10px;color:#C0A888;margin-top:2px">${ts}</div>`:""}
       </div>
-      <div><div class="hist-amt" style="color:${color}">NT$ ${Number(e.amount).toLocaleString()}</div>
-      <div class="hist-who">${e.person}</div></div>
+      <div>
+        <div class="hist-amt" style="color:${color}">NT$ ${Number(e.amount).toLocaleString()}</div>
+        <div class="hist-who">${e.person}</div>
+      </div>
     </div>`;
   }).join("");
 }
