@@ -412,10 +412,10 @@ function onFetchError(msg){
 
 // ── dashboard ──────────────────────────────────────────────────────────
 function showDashState(s){
-  document.getElementById("dash-loading").style.display = s==="loading" ?"":"none";
-  document.getElementById("dash-error").style.display   = s==="error"   ?"":"none";
-  document.getElementById("dash-empty").style.display   = s==="empty"   ?"":"none";
-  document.getElementById("dash-content").style.display = s==="content" ?"":"none";
+  document.getElementById("dash-loading").style.display = s==="loading" ?"block":"none";
+  document.getElementById("dash-error").style.display   = s==="error"   ?"block":"none";
+  document.getElementById("dash-empty").style.display   = s==="empty"   ?"block":"none";
+  document.getElementById("dash-content").style.display = s==="content" ?"block":"none";
 }
 
 function monthExpenses(){return entries.filter(e=>e.month===MONTH&&e.category!=="settle");}
