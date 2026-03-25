@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>共同支出紀錄</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#F5EFE3;font-family:'Noto Serif TC',Georgia,serif;color:#3E2A14;min-height:100vh}
+button{font-family:inherit;cursor:pointer}
+input{font-family:inherit}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input[type=number]{-moz-appearance:textfield}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-thumb{background:#D5C5A8;border-radius:2px}
+
+#header{background:#FFFDF8;border-bottom:1px solid #E8DECA;padding:0 20px;position:sticky;top:0;z-index:50}
+#header-top{display:flex;align-items:center;justify-content:space-between;padding-top:14px;padding-bottom:2px}
+#header h1{font-size:17px;font-weight:700;color:#3E2A14}
+#header-sub{font-size:11px;color:#B09070;margin-top:2px}
+#tabs{display:flex;margin-top:10px;border-top:1px solid #E8DECA}
+.tab-btn{flex:1;padding:10px 0;border:none;background:transparent;font-size:13px;color:#B09070;border-bottom:2px solid transparent;transition:all .18s;font-weight:400}
+.tab-btn.active{color:#4A8F8A;font-weight:700;border-bottom-color:#4A8F8A}
+#wave{height:5px;background:linear-gradient(90deg,#EAF6F5,#EAF6F5 30%,#E8D5B0 60%,#FEF4EA);opacity:.7}
+
+#content{max-width:620px;margin:0 auto;padding:20px 16px 60px}
+.card{background:#FFFDF8;border:1px solid #E8DECA;border-radius:16px;padding:20px;margin-bottom:16px}
+.section-lbl{font-size:11px;color:#B09070;letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-bottom:10px}
+.field-lbl{display:block;font-size:13px;color:#7A6048;margin-bottom:8px}
+.req{color:#C97B3A;margin-left:2px}
+
+#person-grid{display:flex;gap:12px;margin-bottom:20px}
+.person-btn{flex:1;padding:16px 12px;border-radius:14px;border:1.5px solid #E8DECA;background:#FBF7EF;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .18s}
+.person-btn.active-an{border:2px solid #C97B3A;background:#FEF4EA}
+.person-btn.active-zo{border:2px solid #4A8F8A;background:#EAF6F5}
+.person-name{font-size:15px;font-weight:700;color:#B09070}
+.person-btn.active-an .person-name{color:#C97B3A}
+.person-btn.active-zo .person-name{color:#4A8F8A}
+
+.group-title{font-size:11px;color:#B09070;letter-spacing:.06em;text-transform:uppercase;font-weight:700;margin:14px 0 6px}
+.cat-btn{padding:7px 13px;border-radius:20px;border:1px solid #E8DECA;background:#FBF7EF;color:#7A6048;font-size:13px;margin:0 6px 6px 0;transition:all .15s;white-space:nowrap}
+.cat-btn.active{border:1.5px solid #4A8F8A;background:#EAF6F5;color:#2E6B66;font-weight:700}
+
+.amt-wrap{position:relative;margin:16px 0}
+.amt-prefix{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#B09070;font-size:13px;pointer-events:none}
+#amt-input{width:100%;padding:12px 13px 12px 42px;border-radius:10px;border:1px solid #E8DECA;background:#FBF7EF;color:#3E2A14;font-size:16px;outline:none}
+#note-input{width:100%;padding:11px 13px;border-radius:10px;border:1px solid #E8DECA;background:#FBF7EF;color:#3E2A14;font-size:14px;margin-bottom:16px;outline:none}
+#err-msg{color:#C04A2A;font-size:13px;margin-bottom:12px;text-align:center;display:none}
+#submit-btn{width:100%;padding:14px;border-radius:12px;border:none;background:#4A8F8A;color:#fff;font-size:16px;font-weight:700;letter-spacing:.04em;transition:background .2s}
+#submit-btn:disabled{background:#8FBFBC;cursor:not-allowed}
+
+.ghost{padding:6px 12px;border-radius:8px;border:1px solid #E8DECA;background:transparent;color:#7A6048;font-size:12px}
+
+.overlay{position:fixed;inset:0;background:rgba(62,42,20,.45);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+.overlay.hidden{display:none}
+.bottom-sheet{background:#FFFDF8;border-radius:20px 20px 0 0;border:1px solid #E8DECA;padding:20px 20px 36px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto}
+.sheet-handle{width:40px;height:4px;border-radius:2px;background:#E8DECA;margin:0 auto 16px}
+
+#settle-card{background:#F0EEF8;border:1.5px solid rgba(122,107,170,.27);border-radius:16px;padding:20px;margin-bottom:16px;display:none}
+#settle-card.visible{display:block}
+.settle-people{display:flex;gap:10px;margin-bottom:14px}
+.settle-person{flex:1;border-radius:12px;padding:10px 12px}
+.settle-person.an{background:#FEF4EA;border:1px solid rgba(201,123,58,.2)}
+.settle-person.zo{background:#EAF6F5;border:1px solid rgba(74,143,138,.2)}
+.settle-amount-box{background:#fff;border:1px solid rgba(122,107,170,.2);border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:center}
+
+.chart-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:12px}
+.legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+
+.hist-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #E8DECA}
+.hist-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hist-cat{font-size:13px;color:#3E2A14;font-weight:600}
+.hist-note{font-size:11px;color:#B09070;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-amt{font-size:15px;font-weight:700;text-align:right}
+.hist-who{font-size:10px;color:#B09070;margin-top:1px;text-align:right}
+
+.empty-state{text-align:center;padding:48px 24px}
+.empty-state p{color:#7A6048;font-size:14px;margin-top:12px}
+.sea-btn{padding:10px 24px;border-radius:12px;border:none;background:#4A8F8A;color:#fff;font-size:15px;font-weight:700;margin-top:16px}
+
+.person-stats{display:flex;gap:10px;margin-top:16px}
+.pstat{flex:1;border-radius:12px;padding:12px 14px}
+.pstat.an{background:#FEF4EA;border:1px solid rgba(201,123,58,.2)}
+.pstat.zo{background:#EAF6F5;border:1px solid rgba(74,143,138,.2)}
+
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);color:#fff;border-radius:24px;padding:10px 22px;font-size:14px;font-weight:600;z-index:200;white-space:nowrap;pointer-events:none;transition:opacity .3s;opacity:0}
+#toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div id="header-top">
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="#C97B3A"><ellipse cx="12" cy="16" rx="5" ry="4"/><ellipse cx="7" cy="10" rx="2.5" ry="3"/><ellipse cx="17" cy="10" rx="2.5" ry="3"/><ellipse cx="5" cy="15" rx="2" ry="2.5"/><ellipse cx="19" cy="15" rx="2" ry="2.5"/></svg>
+      <div>
+        <h1>共同支出紀錄</h1>
+        <div id="header-sub"></div>
+      </div>
+    </div>
+    <button class="ghost" onclick="fetchData()">↻ 同步</button>
+  </div>
+  <div id="tabs">
+    <button class="tab-btn active" id="tab-form" onclick="switchTab('form')">📝  記帳</button>
+    <button class="tab-btn" id="tab-dashboard" onclick="switchTab('dashboard')">📊  本月概況</button>
+  </div>
+  <div id="wave"></div>
+</div>
+
+<div id="content">
+  <!-- FORM -->
+  <div id="view-form">
+    <div class="card">
+      <label class="field-lbl">支出者<span class="req">*</span></label>
+      <div id="person-grid">
+        <button class="person-btn" id="btn-an" onclick="selectPerson('安')">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><ellipse cx="16" cy="21" rx="10" ry="8" fill="#C97B3A"/><ellipse cx="16" cy="12" rx="7" ry="6" fill="#C97B3A"/><polygon points="10,7 8,1 13,6" fill="#C97B3A"/><polygon points="22,7 24,1 19,6" fill="#C97B3A"/><ellipse cx="16" cy="14" rx="3" ry="2" fill="#F5D5B0"/><circle cx="13" cy="12" r="1.5" fill="#2A1A08"/><circle cx="19" cy="12" r="1.5" fill="#2A1A08"/><path d="M14,15 Q16,16.5 18,15" stroke="#A06028" stroke-width="0.8" fill="none"/><line x1="9" y1="14" x2="5" y2="13.5" stroke="#8A5020" stroke-width="0.6"/><line x1="8.6" y1="14.4" x2="4.6" y2="13.9" stroke="#8A5020" stroke-width="0.6"/><line x1="8.2" y1="14.8" x2="4.2" y2="14.3" stroke="#8A5020" stroke-width="0.6"/><line x1="23" y1="14" x2="27" y2="13.5" stroke="#8A5020" stroke-width="0.6"/><line x1="23.4" y1="14.4" x2="27.4" y2="13.9" stroke="#8A5020" stroke-width="0.6"/><line x1="23.8" y1="14.8" x2="27.8" y2="14.3" stroke="#8A5020" stroke-width="0.6"/><line x1="14" y1="8" x2="14" y2="11" stroke="#A06028" stroke-width="0.8"/><line x1="16" y1="7.5" x2="16" y2="11" stroke="#A06028" stroke-width="0.8"/><line x1="18" y1="8" x2="18" y2="11" stroke="#A06028" stroke-width="0.8"/></svg>
+          <span class="person-name">安</span>
+        </button>
+        <button class="person-btn" id="btn-zo" onclick="selectPerson('佐')">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><ellipse cx="16" cy="21" rx="10" ry="8" fill="#F8E8D0"/><ellipse cx="16" cy="12" rx="7" ry="6" fill="#F8E8D0"/><ellipse cx="10" cy="19" rx="4" ry="5" fill="#D4955A" opacity="0.7"/><ellipse cx="20" cy="23" rx="3" ry="3" fill="#4A3020" opacity="0.3"/><ellipse cx="14" cy="10" rx="3" ry="2.5" fill="#D4955A" opacity="0.55"/><polygon points="10,7 8,1 13,6" fill="#F8E8D0"/><polygon points="22,7 24,1 19,6" fill="#D4955A" opacity="0.7"/><ellipse cx="16" cy="14" rx="3" ry="2" fill="#FEF0E5"/><circle cx="13" cy="12" r="1.5" fill="#2A1A08"/><circle cx="19" cy="12" r="1.5" fill="#2A1A08"/><path d="M14,15 Q16,16.5 18,15" stroke="#C09080" stroke-width="0.8" fill="none"/><line x1="9" y1="14" x2="5" y2="13.5" stroke="#C09080" stroke-width="0.6"/><line x1="8.6" y1="14.4" x2="4.6" y2="13.9" stroke="#C09080" stroke-width="0.6"/><line x1="8.2" y1="14.8" x2="4.2" y2="14.3" stroke="#C09080" stroke-width="0.6"/><line x1="23" y1="14" x2="27" y2="13.5" stroke="#C09080" stroke-width="0.6"/><line x1="23.4" y1="14.4" x2="27.4" y2="13.9" stroke="#C09080" stroke-width="0.6"/><line x1="23.8" y1="14.8" x2="27.8" y2="14.3" stroke="#C09080" stroke-width="0.6"/></svg>
+          <span class="person-name">佐</span>
+        </button>
+      </div>
+
+      <label class="field-lbl">類別<span class="req">*</span></label>
+      <div id="cat-grid"></div>
+
+      <div class="amt-wrap">
+        <span class="amt-prefix">NT$</span>
+        <input id="amt-input" type="number" placeholder="金額" inputmode="numeric"/>
+      </div>
+      <input id="note-input" type="text" placeholder="備註（選填）"/>
+      <div id="err-msg"></div>
+      <button id="submit-btn" onclick="submitEntry()">送出記帳</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="view-dashboard" style="display:none">
+    <div id="dash-loading" class="empty-state"><p>載入中…</p></div>
+    <div id="dash-empty" class="empty-state" style="display:none">
+      <p>本月還沒有記帳紀錄</p>
+      <button class="sea-btn" onclick="switchTab('form')">開始記帳</button>
+    </div>
+    <div id="dash-content" style="display:none">
+      <div id="settle-card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="#7A6BAA"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+          <span style="font-size:13px;font-weight:700;color:#7A6BAA">本月結算</span>
+        </div>
+        <div class="settle-people" id="settle-people-area"></div>
+        <div class="settle-amount-box" id="settle-amount-box"></div>
+        <button id="settle-trigger-btn" style="width:100%;padding:13px;border-radius:12px;border:none;background:#7A6BAA;color:#fff;font-size:15px;font-weight:700;display:none" onclick="showSettleConfirm()">確認已完成轉帳</button>
+        <div id="settle-confirm-area" style="background:#fff;border:1.5px solid #7A6BAA;border-radius:12px;padding:16px;text-align:center;display:none">
+          <div style="font-size:14px;font-weight:700;color:#3E2A14;margin-bottom:4px">確定結算嗎？</div>
+          <div id="settle-confirm-desc" style="font-size:12px;color:#7A6048;margin-bottom:14px"></div>
+          <div style="display:flex;gap:10px">
+            <button class="ghost" style="flex:1;padding:11px;border-radius:10px" onclick="hideSettleConfirm()">取消</button>
+            <button id="settle-ok-btn" style="flex:2;padding:11px;border-radius:10px;border:none;background:#7A6BAA;color:#fff;font-size:14px;font-weight:700" onclick="doSettle()">✓ 確認結算</button>
+          </div>
+        </div>
+        <div id="settle-history" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(122,107,170,.15);display:none"></div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="section-lbl" style="margin-bottom:0" id="summary-month-lbl"></div>
+          <button class="ghost" onclick="fetchData()">↻ 重新整理</button>
+        </div>
+        <div style="background:#FEF4EA;border:1px solid rgba(201,123,58,.2);border-radius:12px;padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:11px;color:#B09070;margin-bottom:3px">本月總支出</div>
+          <div id="total-amt" style="font-size:22px;font-weight:700;color:#C97B3A"></div>
+          <div id="total-count" style="font-size:11px;color:#B09070;margin-top:2px"></div>
+        </div>
+        <div class="person-stats">
+          <div class="pstat an">
+            <div style="font-size:12px;color:#C97B3A;font-weight:700;margin-bottom:4px">安</div>
+            <div id="an-amt" style="font-size:15px;font-weight:700;color:#3E2A14"></div>
+          </div>
+          <div class="pstat zo">
+            <div style="font-size:12px;color:#4A8F8A;font-weight:700;margin-bottom:4px">佐</div>
+            <div id="zo-amt" style="font-size:15px;font-weight:700;color:#3E2A14"></div>
+          </div>
+        </div>
+        <div style="margin-top:16px">
+          <div class="section-lbl">類別分佈</div>
+          <div style="display:flex;justify-content:center;margin:8px 0">
+            <svg id="pie-svg" width="160" height="160" viewBox="-80 -80 160 160"></svg>
+          </div>
+          <div class="chart-legend" id="pie-legend"></div>
+        </div>
+        <div style="margin-top:20px">
+          <div class="section-lbl">各類別金額</div>
+          <svg id="bar-svg" width="100%" style="display:block"></svg>
+        </div>
+        <div style="margin-top:20px">
+          <div class="section-lbl">最近記帳</div>
+          <div id="history-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SUMMARY SHEET -->
+<div class="overlay hidden" id="sum-overlay" onclick="closeSumSheet()">
+  <div class="bottom-sheet" onclick="event.stopPropagation()">
+    <div class="sheet-handle"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="#C97B3A"><ellipse cx="12" cy="16" rx="5" ry="4"/><ellipse cx="7" cy="10" rx="2.5" ry="3"/><ellipse cx="17" cy="10" rx="2.5" ry="3"/><ellipse cx="5" cy="15" rx="2" ry="2.5"/><ellipse cx="19" cy="15" rx="2" ry="2.5"/></svg>
+      <span id="sum-title" style="font-size:15px;font-weight:700;color:#3E2A14"></span>
+    </div>
+    <div id="sum-body"></div>
+    <button onclick="closeSumSheet()" style="margin-top:16px;width:100%;padding:12px;border-radius:12px;border:1px solid #E8DECA;background:transparent;color:#7A6048;font-size:14px">繼續記帳</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── 硬寫 Apps Script 網址，不需要設定 ─────────────────────────────────
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxY5qmwKE0KRI_QSBIjtngoUqlm_QiS5Kis0rT_aw0ttjYoRSDF3J7ihXdWwlUQev9l/exec";
+
+const CATS = [
+  {code:"a",label:"買食材、調味",group:"居家飲食"},
+  {code:"b",label:"買零食、飲料",group:"居家飲食"},
+  {code:"c",label:"買酒回家喝",  group:"居家飲食"},
+  {code:"d",label:"外帶飲食",    group:"居家飲食"},
+  {code:"e",label:"兒女吃喝拉撒",group:"家庭"},
+  {code:"f",label:"日常家用消耗",group:"家庭"},
+  {code:"g",label:"購置家用設備",group:"家庭"},
+  {code:"s",label:"孝親",        group:"家庭"},
+  {code:"h",label:"出門飲食",    group:"外出"},
+  {code:"i",label:"出門飲酒",    group:"外出"},
+  {code:"j",label:"出遊交通",    group:"外出"},
+  {code:"k",label:"出遊住宿",    group:"外出"},
+  {code:"l",label:"娛樂",        group:"外出"},
+  {code:"m",label:"水電瓦斯",    group:"帳單"},
+  {code:"o",label:"網路訂閱",    group:"帳單"},
+  {code:"p",label:"管理費、房租",group:"帳單"},
+  {code:"n",label:"衣著",        group:"個人"},
+  {code:"q",label:"醫藥",        group:"個人"},
+  {code:"r",label:"保養品",      group:"個人"},
+  {code:"t",label:"其他",        group:"其他"},
+];
+const GROUPS = ["居家飲食","家庭","外出","帳單","個人","其他"];
+const PAL = ["#C97B3A","#4A8F8A","#8B7BAA","#5A8A5A","#D4955A","#3A7A9A","#A87B3A","#6A8A5A","#8A5A7A","#4A7A8A","#BA8B4A","#4A8A7A","#9A7A4A","#5A4A8A","#3A8A5A","#C4734A","#4A7A9A","#9A7B4A","#4A9A7A","#7A4A9A"];
+const PC = {"安":"#C97B3A","佐":"#4A8F8A"};
+
+let entries   = [];
+let selPerson = "";
+let selCat    = "";
+
+function getMonthKey() {
+  const d = new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
+}
+function fmtMonth(k) {
+  const [y,m] = k.split("-");
+  return y+" 年 "+parseInt(m)+" 月";
+}
+function catLabel(code) {
+  return (CATS.find(c=>c.code===code)||{label:code}).label;
+}
+const MONTH = getMonthKey();
+
+document.getElementById("header-sub").textContent = fmtMonth(MONTH);
+
+// build category buttons
+(function(){
+  const grid = document.getElementById("cat-grid");
+  GROUPS.forEach(g=>{
+    const cats = CATS.filter(c=>c.group===g);
+    if(!cats.length) return;
+    const t=document.createElement("div"); t.className="group-title"; t.textContent=g; grid.appendChild(t);
+    const row=document.createElement("div");
+    cats.forEach(cat=>{
+      const b=document.createElement("button"); b.className="cat-btn"; b.textContent=cat.label; b.dataset.code=cat.code;
+      b.onclick=()=>selectCat(cat.code); row.appendChild(b);
+    });
+    grid.appendChild(row);
+  });
+})();
+
+function switchTab(t) {
+  document.getElementById("view-form").style.display      = t==="form"      ? "":"none";
+  document.getElementById("view-dashboard").style.display = t==="dashboard" ? "":"none";
+  document.getElementById("tab-form").classList.toggle("active",      t==="form");
+  document.getElementById("tab-dashboard").classList.toggle("active", t==="dashboard");
+  if(t==="dashboard") renderDashboard();
+}
+
+function selectPerson(p) {
+  selPerson=p;
+  document.getElementById("btn-an").className="person-btn"+(p==="安"?" active-an":"");
+  document.getElementById("btn-zo").className="person-btn"+(p==="佐"?" active-zo":"");
+}
+function selectCat(code) {
+  selCat=code;
+  document.querySelectorAll(".cat-btn").forEach(b=>b.classList.toggle("active",b.dataset.code===code));
+}
+function showErr(msg) {
+  const el=document.getElementById("err-msg"); el.textContent=msg; el.style.display=msg?"block":"none";
+}
+
+document.getElementById("amt-input").addEventListener("keydown",  e=>{if(e.key==="Enter")submitEntry();});
+document.getElementById("note-input").addEventListener("keydown", e=>{if(e.key==="Enter")submitEntry();});
+
+async function submitEntry() {
+  if(!selPerson)  return showErr("請選擇支出者");
+  if(!selCat)     return showErr("請選擇類別");
+  const amt=Number(document.getElementById("amt-input").value);
+  if(!amt||amt<=0) return showErr("請輸入有效金額");
+  showErr("");
+  const btn=document.getElementById("submit-btn");
+  btn.disabled=true; btn.textContent="送出中…";
+  const note=document.getElementById("note-input").value;
+  const payload={person:selPerson,category:selCat,categoryLabel:catLabel(selCat),amount:amt,note,month:MONTH};
+  try {
+    await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)});
+    entries.push({...payload,timestamp:new Date().toLocaleString("zh-TW")});
+    document.getElementById("amt-input").value="";
+    document.getElementById("note-input").value="";
+    selPerson=""; selCat="";
+    document.querySelectorAll(".person-btn").forEach(b=>b.className="person-btn");
+    document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
+    updateDashTab();
+    openSumSheet();
+  } catch { showToast("送出失敗，請重試","err"); }
+  finally { btn.disabled=false; btn.textContent="送出記帳"; }
+}
+
+function openSumSheet() {
+  document.getElementById("sum-title").textContent=fmtMonth(MONTH)+" 收支概況";
+  document.getElementById("sum-body").innerHTML=buildSummaryHTML();
+  document.getElementById("sum-overlay").classList.remove("hidden");
+}
+function closeSumSheet() { document.getElementById("sum-overlay").classList.add("hidden"); }
+
+function fetchData() {
+  showDashState("loading");
+  const cbName = "gs_cb_" + Date.now();
+  const script = document.createElement("script");
+  const timer = setTimeout(()=>{
+    cleanup();
+    showToast("讀取逾時，請重試","err");
+    showDashState("empty");
+  }, 12000);
+  function cleanup() {
+    clearTimeout(timer);
+    delete window[cbName];
+    if(script.parentNode) script.parentNode.removeChild(script);
+  }
+  window[cbName] = function(data) {
+    cleanup();
+    entries = Array.isArray(data) ? data : [];
+    renderDashboard();
+    updateDashTab();
+  };
+  script.onerror = function() {
+    cleanup();
+    showToast("讀取失敗，請稍後再試","err");
+    showDashState("empty");
+  };
+  script.src = SCRIPT_URL + "?callback=" + cbName;
+  document.head.appendChild(script);
+}
+
+function showDashState(s) {
+  document.getElementById("dash-loading").style.display = s==="loading" ? "":"none";
+  document.getElementById("dash-empty").style.display   = s==="empty"   ? "":"none";
+  document.getElementById("dash-content").style.display = s==="content" ? "":"none";
+}
+
+function monthExpenses() { return entries.filter(e=>e.month===MONTH&&e.category!=="settle"); }
+function monthAll()      { return entries.filter(e=>e.month===MONTH); }
+
+function renderDashboard() {
+  const me=monthExpenses(), all=monthAll();
+  if(!me.length&&!all.filter(e=>e.category==="settle").length) return showDashState("empty");
+  showDashState("content");
+  renderSummaryCard();
+  renderSettleCard();
+}
+
+function renderSummaryCard() {
+  const me=monthExpenses();
+  const total=me.reduce((s,e)=>s+Number(e.amount),0);
+  const anAmt=me.filter(e=>e.person==="安").reduce((s,e)=>s+Number(e.amount),0);
+  const zoAmt=me.filter(e=>e.person==="佐").reduce((s,e)=>s+Number(e.amount),0);
+  document.getElementById("summary-month-lbl").textContent=fmtMonth(MONTH);
+  document.getElementById("total-amt").textContent="NT$ "+total.toLocaleString();
+  document.getElementById("total-count").textContent="共 "+me.length+" 筆";
+  document.getElementById("an-amt").textContent="NT$ "+anAmt.toLocaleString();
+  document.getElementById("zo-amt").textContent="NT$ "+zoAmt.toLocaleString();
+  const map={};
+  me.forEach(e=>{map[e.category]=(map[e.category]||0)+Number(e.amount);});
+  const bycat=CATS.filter(c=>map[c.code]).map(c=>({name:c.label,value:map[c.code],code:c.code})).sort((a,b)=>b.value-a.value);
+  drawPie(bycat,total);
+  drawBars(bycat);
+  drawHistory();
+}
+
+function buildSummaryHTML() {
+  const me=monthExpenses();
+  const total=me.reduce((s,e)=>s+Number(e.amount),0);
+  const anAmt=me.filter(e=>e.person==="安").reduce((s,e)=>s+Number(e.amount),0);
+  const zoAmt=me.filter(e=>e.person==="佐").reduce((s,e)=>s+Number(e.amount),0);
+  const map={};
+  me.forEach(e=>{map[e.category]=(map[e.category]||0)+Number(e.amount);});
+  const bycat=CATS.filter(c=>map[c.code]).map(c=>({name:c.label,value:map[c.code],code:c.code})).sort((a,b)=>b.value-a.value);
+  let h=`<div style="display:flex;gap:10px;margin-bottom:12px">
+    <div style="flex:1;background:#FEF4EA;border:1px solid rgba(201,123,58,.2);border-radius:12px;padding:12px 14px">
+      <div style="font-size:11px;color:#B09070;margin-bottom:3px">本月總支出</div>
+      <div style="font-size:20px;font-weight:700;color:#C97B3A">NT$ ${total.toLocaleString()}</div>
+      <div style="font-size:11px;color:#B09070;margin-top:2px">共 ${me.length} 筆</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;flex:1">
+      <div style="flex:1;background:#FEF4EA;border:1px solid rgba(201,123,58,.2);border-radius:10px;padding:8px 12px">
+        <div style="font-size:11px;color:#B09070">安</div>
+        <div style="font-size:14px;font-weight:700;color:#C97B3A">NT$ ${anAmt.toLocaleString()}</div>
+      </div>
+      <div style="flex:1;background:#EAF6F5;border:1px solid rgba(74,143,138,.2);border-radius:10px;padding:8px 12px">
+        <div style="font-size:11px;color:#B09070">佐</div>
+        <div style="font-size:14px;font-weight:700;color:#4A8F8A">NT$ ${zoAmt.toLocaleString()}</div>
+      </div>
+    </div>
+  </div>`;
+  if(bycat.length) h+=buildInlinePie(bycat,total);
+  return h;
+}
+
+function buildInlinePie(bycat,total) {
+  if(!bycat.length) return "";
+  let paths="",start=0,r=58;
+  bycat.forEach((c,i)=>{
+    const slice=(c.value/total)*Math.PI*2;
+    const x1=r*Math.sin(start),y1=-r*Math.cos(start);
+    const x2=r*Math.sin(start+slice),y2=-r*Math.cos(start+slice);
+    const lg=slice>Math.PI?1:0;
+    if(bycat.length===1){paths+=`<circle cx="0" cy="0" r="${r}" fill="${PAL[i%PAL.length]}"/>`;}
+    else{paths+=`<path d="M0,0 L${x1},${y1} A${r},${r},0,${lg},1,${x2},${y2} Z" fill="${PAL[i%PAL.length]}"/>`;}
+    start+=slice;
+  });
+  let leg=bycat.map((c,i)=>`<div style="display:flex;align-items:center;gap:5px;font-size:12px;margin:0 14px 6px 0">
+    <div style="width:8px;height:8px;border-radius:2px;background:${PAL[i%PAL.length]};flex-shrink:0"></div>
+    <span style="color:#7A6048">${c.name}</span>
+    <span style="font-weight:700;color:#3E2A14">${total>0?Math.round(c.value/total*100):0}%</span>
+  </div>`).join("");
+  return `<div style="font-size:11px;color:#B09070;letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-bottom:8px">類別分佈</div>
+  <div style="display:flex;justify-content:center;margin:4px 0">
+    <svg width="120" height="120" viewBox="-60 -60 120 120">${paths}<circle cx="0" cy="0" r="26" fill="#FFFDF8"/></svg>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;margin-top:4px">${leg}</div>`;
+}
+
+function drawPie(bycat,total) {
+  const svg=document.getElementById("pie-svg");
+  if(!bycat.length){svg.innerHTML="";return;}
+  let h="",start=0,r=68;
+  bycat.forEach((c,i)=>{
+    const slice=(c.value/total)*Math.PI*2;
+    const x1=r*Math.sin(start),y1=-r*Math.cos(start);
+    const x2=r*Math.sin(start+slice),y2=-r*Math.cos(start+slice);
+    const lg=slice>Math.PI?1:0;
+    if(bycat.length===1){h+=`<circle cx="0" cy="0" r="${r}" fill="${PAL[i%PAL.length]}"/>`;}
+    else{h+=`<path d="M0,0 L${x1},${y1} A${r},${r},0,${lg},1,${x2},${y2} Z" fill="${PAL[i%PAL.length]}"/>`;}
+    start+=slice;
+  });
+  h+=`<circle cx="0" cy="0" r="30" fill="#FFFDF8"/>`;
+  svg.innerHTML=h;
+  document.getElementById("pie-legend").innerHTML=bycat.map((c,i)=>`
+    <div class="legend-item">
+      <div class="legend-dot" style="background:${PAL[i%PAL.length]}"></div>
+      <span style="color:#7A6048">${c.name}</span>
+      <span style="font-weight:700;color:#3E2A14">${total>0?Math.round(c.value/total*100):0}%</span>
+    </div>`).join("");
+}
+
+function drawBars(bycat) {
+  const svg=document.getElementById("bar-svg");
+  if(!bycat.length){svg.innerHTML="";svg.setAttribute("height","0");return;}
+  const W=svg.parentElement.clientWidth||320,lw=96,rp=52,bw=W-lw-rp,rh=30,gap=6,max=bycat[0].value;
+  const th=bycat.length*(rh+gap);
+  svg.setAttribute("height",th); svg.setAttribute("viewBox",`0 0 ${W} ${th}`);
+  svg.innerHTML=bycat.map((c,i)=>{
+    const y=i*(rh+gap),bwi=max>0?Math.round((c.value/max)*bw):0;
+    return `<text x="${lw-6}" y="${y+rh/2+4}" text-anchor="end" font-size="11" fill="#7A6048" font-family="inherit">${c.name}</text>
+    <rect x="${lw}" y="${y+4}" width="${bwi}" height="${rh-8}" rx="4" fill="${PAL[i%PAL.length]}"/>
+    <text x="${lw+bwi+5}" y="${y+rh/2+4}" font-size="11" fill="#7A6048" font-family="inherit">${c.value.toLocaleString()}</text>`;
+  }).join("");
+}
+
+function drawHistory() {
+  const all=[...monthAll()].reverse().slice(0,25);
+  document.getElementById("history-list").innerHTML=all.map(e=>{
+    const isS=e.category==="settle";
+    const color=isS?"#7A6BAA":(PC[e.person]||"#C97B3A");
+    const bg=isS?"#F0EEF8":(e.person==="安"?"#FEF4EA":"#EAF6F5");
+    const icon=isS
+      ?`<svg width="16" height="16" viewBox="0 0 24 24" fill="#7A6BAA"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>`
+      :`<svg width="18" height="18" viewBox="0 0 24 24" fill="${color}" opacity="0.8"><ellipse cx="12" cy="16" rx="5" ry="4"/><ellipse cx="7" cy="10" rx="2.5" ry="3"/><ellipse cx="17" cy="10" rx="2.5" ry="3"/><ellipse cx="5" cy="15" rx="2" ry="2.5"/><ellipse cx="19" cy="15" rx="2" ry="2.5"/></svg>`;
+    return `<div class="hist-row">
+      <div class="hist-icon" style="background:${bg};border:1px solid ${color}44">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div class="hist-cat">${e.categoryLabel||catLabel(e.category)}</div>
+        ${e.note?`<div class="hist-note">${e.note}</div>`:""}
+      </div>
+      <div>
+        <div class="hist-amt" style="color:${color}">NT$ ${Number(e.amount).toLocaleString()}</div>
+        <div class="hist-who">${e.person}</div>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+function renderSettleCard() {
+  const me=monthExpenses(), settlements=monthAll().filter(e=>e.category==="settle");
+  const card=document.getElementById("settle-card");
+  if(!me.length){card.classList.remove("visible");return;}
+  card.classList.add("visible");
+  const raw={"安":0,"佐":0};
+  me.forEach(e=>{raw[e.person]=(raw[e.person]||0)+Number(e.amount);});
+  const eff={...raw};
+  settlements.forEach(e=>{
+    const payer=e.person,recv=(e.note||"").split("→")[1],amt=Number(e.amount);
+    if(payer&&recv){eff[payer]=(eff[payer]||0)+amt;eff[recv]=(eff[recv]||0)-amt;}
+  });
+  const total=raw["安"]+raw["佐"],fair=total/2,diff=eff["安"]-eff["佐"];
+  const gap=Math.abs(Math.round(diff/2)),payer=diff>0?"佐":"安",recv=diff>0?"安":"佐";
+  let ph=["安","佐"].map(p=>{
+    const over=Math.round(eff[p]-fair);
+    const lc=over>0?"#B03A20":"#5A8A5A";
+    const label=over>0?`多付 NT$ ${Math.abs(over).toLocaleString()}`:`少付 NT$ ${Math.abs(over).toLocaleString()}`;
+    return `<div class="settle-person ${p==="安"?"an":"zo"}">
+      <div style="font-size:12px;color:${PC[p]};font-weight:700;margin-bottom:4px">${p}</div>
+      <div style="font-size:15px;font-weight:700;color:#3E2A14">NT$ ${raw[p].toLocaleString()}</div>
+      <div style="font-size:11px;color:${lc};margin-top:2px">${label}</div>
+    </div>`;
+  }).join("");
+  document.getElementById("settle-people-area").innerHTML=ph;
+  const box=document.getElementById("settle-amount-box"),trigBtn=document.getElementById("settle-trigger-btn");
+  if(gap===0){
+    box.innerHTML=`<div style="color:#5A8A5A;font-size:14px;font-weight:700;padding:4px 0">✓ 已結清，兩人平衡！</div>`;
+    trigBtn.style.display="none";
+  } else {
+    box.innerHTML=`<div style="font-size:12px;color:#B09070;margin-bottom:4px">需要轉帳</div>
+      <div style="font-size:13px;color:#7A6048"><b style="color:${PC[payer]}">${payer}</b> 需要給 <b style="color:${PC[recv]}">${recv}</b></div>
+      <div style="font-size:26px;font-weight:700;color:#7A6BAA;margin:8px 0 2px;letter-spacing:-.02em">NT$ ${gap.toLocaleString()}</div>
+      <div style="font-size:11px;color:#B09070">給了之後本月餘額歸零</div>`;
+    trigBtn.style.display="block";
+    trigBtn.dataset.payer=payer; trigBtn.dataset.recv=recv; trigBtn.dataset.gap=gap;
+  }
+  hideSettleConfirm();
+  const histDiv=document.getElementById("settle-history");
+  if(settlements.length){
+    histDiv.style.display="block";
+    histDiv.innerHTML=`<div style="font-size:11px;color:#7A6BAA;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">結算紀錄</div>`+
+      settlements.map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;color:#7A6048;padding:5px 0">
+        <span>${e.note} 已轉帳</span><span style="font-weight:700;color:#7A6BAA">NT$ ${Number(e.amount).toLocaleString()}</span>
+      </div>`).join("");
+  } else { histDiv.style.display="none"; }
+}
+
+function showSettleConfirm() {
+  const btn=document.getElementById("settle-trigger-btn");
+  document.getElementById("settle-confirm-desc").textContent=`將記錄「${btn.dataset.payer} 已給 ${btn.dataset.recv} NT$ ${Number(btn.dataset.gap).toLocaleString()}」到試算表，本月餘額歸零。`;
+  document.getElementById("settle-confirm-area").style.display="block";
+  btn.style.display="none";
+}
+function hideSettleConfirm() {
+  document.getElementById("settle-confirm-area").style.display="none";
+}
+async function doSettle() {
+  const btn=document.getElementById("settle-trigger-btn"),okBtn=document.getElementById("settle-ok-btn");
+  const payer=btn.dataset.payer,recv=btn.dataset.recv,gap=Number(btn.dataset.gap);
+  okBtn.disabled=true; okBtn.textContent="記錄中…";
+  const payload={person:payer,category:"settle",categoryLabel:"結算",amount:gap,note:`${payer}→${recv}`,month:MONTH};
+  try {
+    await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)});
+    entries.push({...payload,timestamp:new Date().toLocaleString("zh-TW")});
+    showToast("✓ 結算完成！","ok");
+    renderDashboard();
+  } catch { showToast("結算失敗，請重試","err"); }
+  finally { okBtn.disabled=false; okBtn.textContent="✓ 確認結算"; }
+}
+
+function updateDashTab() {
+  const n=monthExpenses().length;
+  document.getElementById("tab-dashboard").textContent="📊  本月概況"+(n>0?` (${n})`:"");
+}
+
+let toastTimer;
+function showToast(msg,type="ok") {
+  const el=document.getElementById("toast");
+  el.textContent=msg; el.style.background=type==="err"?"#B03A20":"#2E6B66";
+  el.classList.add("show"); clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove("show"),3000);
+}
+
+// 啟動時自動載入資料
+fetchData();
+</script>
+</body>
+</html>
