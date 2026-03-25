@@ -76,14 +76,20 @@ input[type=number]{-moz-appearance:textfield}
 .hist-amt{font-size:15px;font-weight:700;text-align:right}
 .hist-who{font-size:10px;color:#B09070;margin-top:1px;text-align:right}
 
-.empty-state{text-align:center;padding:48px 24px}
-.empty-state p{color:#7A6048;font-size:14px;margin-top:12px}
-.sea-btn{padding:10px 24px;border-radius:12px;border:none;background:#4A8F8A;color:#fff;font-size:15px;font-weight:700;margin-top:16px}
-
 .person-stats{display:flex;gap:10px;margin-top:16px}
 .pstat{flex:1;border-radius:12px;padding:12px 14px}
 .pstat.an{background:#FEF4EA;border:1px solid rgba(201,123,58,.2)}
 .pstat.zo{background:#EAF6F5;border:1px solid rgba(74,143,138,.2)}
+
+/* dash states */
+#dash-loading{text-align:center;padding:64px 24px;color:#B09070}
+#dash-loading p{font-size:14px;margin-top:12px}
+#dash-error{display:none;text-align:center;padding:48px 24px}
+#dash-empty{display:none;text-align:center;padding:48px 24px}
+#dash-empty p,#dash-error p{color:#7A6048;font-size:14px;margin-top:12px}
+.sea-btn{padding:10px 24px;border-radius:12px;border:none;background:#4A8F8A;color:#fff;font-size:15px;font-weight:700;margin-top:16px}
+.err-btn{padding:10px 24px;border-radius:12px;border:none;background:#C97B3A;color:#fff;font-size:15px;font-weight:700;margin-top:16px}
+#dash-content{display:none}
 
 #toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);color:#fff;border-radius:24px;padding:10px 22px;font-size:14px;font-weight:600;z-index:200;white-space:nowrap;pointer-events:none;transition:opacity .3s;opacity:0}
 #toast.show{opacity:1}
@@ -100,7 +106,7 @@ input[type=number]{-moz-appearance:textfield}
         <div id="header-sub"></div>
       </div>
     </div>
-    <button class="ghost" onclick="fetchData()">↻ 同步</button>
+    <button class="ghost" id="sync-btn" onclick="fetchData()">↻ 同步</button>
   </div>
   <div id="tabs">
     <button class="tab-btn active" id="tab-form" onclick="switchTab('form')">📝  記帳</button>
@@ -140,12 +146,24 @@ input[type=number]{-moz-appearance:textfield}
 
   <!-- DASHBOARD -->
   <div id="view-dashboard" style="display:none">
-    <div id="dash-loading" class="empty-state"><p>載入中…</p></div>
-    <div id="dash-empty" class="empty-state" style="display:none">
+    <div id="dash-loading">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="#E8D5B0"><ellipse cx="12" cy="16" rx="5" ry="4"/><ellipse cx="7" cy="10" rx="2.5" ry="3"/><ellipse cx="17" cy="10" rx="2.5" ry="3"/><ellipse cx="5" cy="15" rx="2" ry="2.5"/><ellipse cx="19" cy="15" rx="2" ry="2.5"/></svg>
+      <p>正在載入資料…</p>
+    </div>
+
+    <div id="dash-error">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="#C97B3A"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <p id="dash-error-msg">讀取失敗</p>
+      <br/>
+      <button class="err-btn" onclick="fetchData()">↻ 重試</button>
+    </div>
+
+    <div id="dash-empty">
       <p>本月還沒有記帳紀錄</p>
       <button class="sea-btn" onclick="switchTab('form')">開始記帳</button>
     </div>
-    <div id="dash-content" style="display:none">
+
+    <div id="dash-content">
       <div id="settle-card">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="#7A6BAA"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
@@ -221,7 +239,6 @@ input[type=number]{-moz-appearance:textfield}
 <div id="toast"></div>
 
 <script>
-// ── 硬寫 Apps Script 網址，不需要設定 ─────────────────────────────────
 const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxY5qmwKE0KRI_QSBIjtngoUqlm_QiS5Kis0rT_aw0ttjYoRSDF3J7ihXdWwlUQev9l/exec";
 
 const CATS = [
@@ -253,140 +270,166 @@ const PC = {"安":"#C97B3A","佐":"#4A8F8A"};
 let entries   = [];
 let selPerson = "";
 let selCat    = "";
+let isLoading = false;
+let curTab    = "form";
 
-function getMonthKey() {
-  const d = new Date();
-  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");
-}
-function fmtMonth(k) {
-  const [y,m] = k.split("-");
-  return y+" 年 "+parseInt(m)+" 月";
-}
-function catLabel(code) {
-  return (CATS.find(c=>c.code===code)||{label:code}).label;
-}
-const MONTH = getMonthKey();
+function getMonthKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
+function fmtMonth(k){const[y,m]=k.split("-");return y+" 年 "+parseInt(m)+" 月";}
+function catLabel(c){return(CATS.find(x=>x.code===c)||{label:c}).label;}
+const MONTH=getMonthKey();
 
-document.getElementById("header-sub").textContent = fmtMonth(MONTH);
+document.getElementById("header-sub").textContent=fmtMonth(MONTH);
 
 // build category buttons
 (function(){
-  const grid = document.getElementById("cat-grid");
+  const grid=document.getElementById("cat-grid");
   GROUPS.forEach(g=>{
-    const cats = CATS.filter(c=>c.group===g);
+    const cats=CATS.filter(c=>c.group===g);
     if(!cats.length) return;
-    const t=document.createElement("div"); t.className="group-title"; t.textContent=g; grid.appendChild(t);
+    const t=document.createElement("div");t.className="group-title";t.textContent=g;grid.appendChild(t);
     const row=document.createElement("div");
     cats.forEach(cat=>{
-      const b=document.createElement("button"); b.className="cat-btn"; b.textContent=cat.label; b.dataset.code=cat.code;
-      b.onclick=()=>selectCat(cat.code); row.appendChild(b);
+      const b=document.createElement("button");b.className="cat-btn";b.textContent=cat.label;b.dataset.code=cat.code;
+      b.onclick=()=>selectCat(cat.code);row.appendChild(b);
     });
     grid.appendChild(row);
   });
 })();
 
-function switchTab(t) {
-  document.getElementById("view-form").style.display      = t==="form"      ? "":"none";
-  document.getElementById("view-dashboard").style.display = t==="dashboard" ? "":"none";
+// ── tab ────────────────────────────────────────────────────────────────
+function switchTab(t){
+  curTab=t;
+  document.getElementById("view-form").style.display      = t==="form"      ?"":"none";
+  document.getElementById("view-dashboard").style.display = t==="dashboard" ?"":"none";
   document.getElementById("tab-form").classList.toggle("active",      t==="form");
   document.getElementById("tab-dashboard").classList.toggle("active", t==="dashboard");
-  if(t==="dashboard") renderDashboard();
+  if(t==="dashboard"){
+    // show correct state based on loading flag
+    if(isLoading) showDashState("loading");
+    else renderDashboard();
+  }
 }
 
-function selectPerson(p) {
+// ── form ───────────────────────────────────────────────────────────────
+function selectPerson(p){
   selPerson=p;
   document.getElementById("btn-an").className="person-btn"+(p==="安"?" active-an":"");
   document.getElementById("btn-zo").className="person-btn"+(p==="佐"?" active-zo":"");
 }
-function selectCat(code) {
+function selectCat(code){
   selCat=code;
   document.querySelectorAll(".cat-btn").forEach(b=>b.classList.toggle("active",b.dataset.code===code));
 }
-function showErr(msg) {
-  const el=document.getElementById("err-msg"); el.textContent=msg; el.style.display=msg?"block":"none";
-}
+function showErr(msg){const el=document.getElementById("err-msg");el.textContent=msg;el.style.display=msg?"block":"none";}
 
 document.getElementById("amt-input").addEventListener("keydown",  e=>{if(e.key==="Enter")submitEntry();});
 document.getElementById("note-input").addEventListener("keydown", e=>{if(e.key==="Enter")submitEntry();});
 
-async function submitEntry() {
+async function submitEntry(){
   if(!selPerson)  return showErr("請選擇支出者");
   if(!selCat)     return showErr("請選擇類別");
   const amt=Number(document.getElementById("amt-input").value);
   if(!amt||amt<=0) return showErr("請輸入有效金額");
   showErr("");
   const btn=document.getElementById("submit-btn");
-  btn.disabled=true; btn.textContent="送出中…";
+  btn.disabled=true;btn.textContent="送出中…";
   const note=document.getElementById("note-input").value;
   const payload={person:selPerson,category:selCat,categoryLabel:catLabel(selCat),amount:amt,note,month:MONTH};
-  try {
+  try{
     await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)});
     entries.push({...payload,timestamp:new Date().toLocaleString("zh-TW")});
     document.getElementById("amt-input").value="";
     document.getElementById("note-input").value="";
-    selPerson=""; selCat="";
+    selPerson="";selCat="";
     document.querySelectorAll(".person-btn").forEach(b=>b.className="person-btn");
     document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
     updateDashTab();
     openSumSheet();
-  } catch { showToast("送出失敗，請重試","err"); }
-  finally { btn.disabled=false; btn.textContent="送出記帳"; }
+  }catch{showToast("送出失敗，請重試","err");}
+  finally{btn.disabled=false;btn.textContent="送出記帳";}
 }
 
-function openSumSheet() {
+// ── summary sheet ──────────────────────────────────────────────────────
+function openSumSheet(){
   document.getElementById("sum-title").textContent=fmtMonth(MONTH)+" 收支概況";
   document.getElementById("sum-body").innerHTML=buildSummaryHTML();
   document.getElementById("sum-overlay").classList.remove("hidden");
 }
-function closeSumSheet() { document.getElementById("sum-overlay").classList.add("hidden"); }
+function closeSumSheet(){document.getElementById("sum-overlay").classList.add("hidden");}
 
-function fetchData() {
-  showDashState("loading");
-  const cbName = "gs_cb_" + Date.now();
-  const script = document.createElement("script");
-  const timer = setTimeout(()=>{
+// ── fetch (JSONP) ──────────────────────────────────────────────────────
+function fetchData(){
+  isLoading=true;
+  if(curTab==="dashboard") showDashState("loading");
+
+  const btn=document.getElementById("sync-btn");
+  btn.textContent="同步中…";btn.disabled=true;
+
+  const cbName="gs_cb_"+Date.now();
+  const script=document.createElement("script");
+
+  const timer=setTimeout(()=>{
     cleanup();
-    showToast("讀取逾時，請重試","err");
-    showDashState("empty");
-  }, 12000);
-  function cleanup() {
+    onFetchError("讀取逾時，請確認 Apps Script 已重新部署");
+  },15000);
+
+  function cleanup(){
+    isLoading=false;
+    btn.textContent="↻ 同步";btn.disabled=false;
     clearTimeout(timer);
     delete window[cbName];
     if(script.parentNode) script.parentNode.removeChild(script);
   }
-  window[cbName] = function(data) {
+
+  window[cbName]=function(data){
     cleanup();
-    entries = Array.isArray(data) ? data : [];
-    renderDashboard();
+    if(!Array.isArray(data)){
+      onFetchError("資料格式錯誤，請確認 Apps Script 程式碼已更新");
+      return;
+    }
+    entries=data;
+    showToast("✓ 已同步 "+data.length+" 筆","ok");
+    if(curTab==="dashboard") renderDashboard();
     updateDashTab();
   };
-  script.onerror = function() {
+
+  script.onerror=function(){
     cleanup();
-    showToast("讀取失敗，請稍後再試","err");
-    showDashState("empty");
+    onFetchError("連線失敗，請確認 Apps Script 網址正確且已部署");
   };
-  script.src = SCRIPT_URL + "?callback=" + cbName;
+
+  script.src=SCRIPT_URL+"?callback="+cbName+"&t="+Date.now();
   document.head.appendChild(script);
 }
 
-function showDashState(s) {
-  document.getElementById("dash-loading").style.display = s==="loading" ? "":"none";
-  document.getElementById("dash-empty").style.display   = s==="empty"   ? "":"none";
-  document.getElementById("dash-content").style.display = s==="content" ? "":"none";
+function onFetchError(msg){
+  if(curTab==="dashboard"){
+    document.getElementById("dash-error-msg").textContent=msg;
+    showDashState("error");
+  }
+  showToast(msg,"err");
 }
 
-function monthExpenses() { return entries.filter(e=>e.month===MONTH&&e.category!=="settle"); }
-function monthAll()      { return entries.filter(e=>e.month===MONTH); }
+// ── dashboard ──────────────────────────────────────────────────────────
+function showDashState(s){
+  document.getElementById("dash-loading").style.display = s==="loading" ?"":"none";
+  document.getElementById("dash-error").style.display   = s==="error"   ?"":"none";
+  document.getElementById("dash-empty").style.display   = s==="empty"   ?"":"none";
+  document.getElementById("dash-content").style.display = s==="content" ?"":"none";
+}
 
-function renderDashboard() {
-  const me=monthExpenses(), all=monthAll();
-  if(!me.length&&!all.filter(e=>e.category==="settle").length) return showDashState("empty");
+function monthExpenses(){return entries.filter(e=>e.month===MONTH&&e.category!=="settle");}
+function monthAll()     {return entries.filter(e=>e.month===MONTH);}
+
+function renderDashboard(){
+  const me=monthExpenses(),all=monthAll();
+  if(!me.length&&!all.filter(e=>e.category==="settle").length){showDashState("empty");return;}
   showDashState("content");
   renderSummaryCard();
   renderSettleCard();
 }
 
-function renderSummaryCard() {
+function renderSummaryCard(){
   const me=monthExpenses();
   const total=me.reduce((s,e)=>s+Number(e.amount),0);
   const anAmt=me.filter(e=>e.person==="安").reduce((s,e)=>s+Number(e.amount),0);
@@ -399,18 +442,15 @@ function renderSummaryCard() {
   const map={};
   me.forEach(e=>{map[e.category]=(map[e.category]||0)+Number(e.amount);});
   const bycat=CATS.filter(c=>map[c.code]).map(c=>({name:c.label,value:map[c.code],code:c.code})).sort((a,b)=>b.value-a.value);
-  drawPie(bycat,total);
-  drawBars(bycat);
-  drawHistory();
+  drawPie(bycat,total);drawBars(bycat);drawHistory();
 }
 
-function buildSummaryHTML() {
+function buildSummaryHTML(){
   const me=monthExpenses();
   const total=me.reduce((s,e)=>s+Number(e.amount),0);
   const anAmt=me.filter(e=>e.person==="安").reduce((s,e)=>s+Number(e.amount),0);
   const zoAmt=me.filter(e=>e.person==="佐").reduce((s,e)=>s+Number(e.amount),0);
-  const map={};
-  me.forEach(e=>{map[e.category]=(map[e.category]||0)+Number(e.amount);});
+  const map={};me.forEach(e=>{map[e.category]=(map[e.category]||0)+Number(e.amount);});
   const bycat=CATS.filter(c=>map[c.code]).map(c=>({name:c.label,value:map[c.code],code:c.code})).sort((a,b)=>b.value-a.value);
   let h=`<div style="display:flex;gap:10px;margin-bottom:12px">
     <div style="flex:1;background:#FEF4EA;border:1px solid rgba(201,123,58,.2);border-radius:12px;padding:12px 14px">
@@ -433,7 +473,7 @@ function buildSummaryHTML() {
   return h;
 }
 
-function buildInlinePie(bycat,total) {
+function buildInlinePie(bycat,total){
   if(!bycat.length) return "";
   let paths="",start=0,r=58;
   bycat.forEach((c,i)=>{
@@ -453,11 +493,10 @@ function buildInlinePie(bycat,total) {
   return `<div style="font-size:11px;color:#B09070;letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-bottom:8px">類別分佈</div>
   <div style="display:flex;justify-content:center;margin:4px 0">
     <svg width="120" height="120" viewBox="-60 -60 120 120">${paths}<circle cx="0" cy="0" r="26" fill="#FFFDF8"/></svg>
-  </div>
-  <div style="display:flex;flex-wrap:wrap;margin-top:4px">${leg}</div>`;
+  </div><div style="display:flex;flex-wrap:wrap;margin-top:4px">${leg}</div>`;
 }
 
-function drawPie(bycat,total) {
+function drawPie(bycat,total){
   const svg=document.getElementById("pie-svg");
   if(!bycat.length){svg.innerHTML="";return;}
   let h="",start=0,r=68;
@@ -473,19 +512,17 @@ function drawPie(bycat,total) {
   h+=`<circle cx="0" cy="0" r="30" fill="#FFFDF8"/>`;
   svg.innerHTML=h;
   document.getElementById("pie-legend").innerHTML=bycat.map((c,i)=>`
-    <div class="legend-item">
-      <div class="legend-dot" style="background:${PAL[i%PAL.length]}"></div>
-      <span style="color:#7A6048">${c.name}</span>
-      <span style="font-weight:700;color:#3E2A14">${total>0?Math.round(c.value/total*100):0}%</span>
-    </div>`).join("");
+    <div class="legend-item"><div class="legend-dot" style="background:${PAL[i%PAL.length]}"></div>
+    <span style="color:#7A6048">${c.name}</span>
+    <span style="font-weight:700;color:#3E2A14">${total>0?Math.round(c.value/total*100):0}%</span></div>`).join("");
 }
 
-function drawBars(bycat) {
+function drawBars(bycat){
   const svg=document.getElementById("bar-svg");
   if(!bycat.length){svg.innerHTML="";svg.setAttribute("height","0");return;}
   const W=svg.parentElement.clientWidth||320,lw=96,rp=52,bw=W-lw-rp,rh=30,gap=6,max=bycat[0].value;
   const th=bycat.length*(rh+gap);
-  svg.setAttribute("height",th); svg.setAttribute("viewBox",`0 0 ${W} ${th}`);
+  svg.setAttribute("height",th);svg.setAttribute("viewBox",`0 0 ${W} ${th}`);
   svg.innerHTML=bycat.map((c,i)=>{
     const y=i*(rh+gap),bwi=max>0?Math.round((c.value/max)*bw):0;
     return `<text x="${lw-6}" y="${y+rh/2+4}" text-anchor="end" font-size="11" fill="#7A6048" font-family="inherit">${c.name}</text>
@@ -494,7 +531,7 @@ function drawBars(bycat) {
   }).join("");
 }
 
-function drawHistory() {
+function drawHistory(){
   const all=[...monthAll()].reverse().slice(0,25);
   document.getElementById("history-list").innerHTML=all.map(e=>{
     const isS=e.category==="settle";
@@ -509,16 +546,14 @@ function drawHistory() {
         <div class="hist-cat">${e.categoryLabel||catLabel(e.category)}</div>
         ${e.note?`<div class="hist-note">${e.note}</div>`:""}
       </div>
-      <div>
-        <div class="hist-amt" style="color:${color}">NT$ ${Number(e.amount).toLocaleString()}</div>
-        <div class="hist-who">${e.person}</div>
-      </div>
+      <div><div class="hist-amt" style="color:${color}">NT$ ${Number(e.amount).toLocaleString()}</div>
+      <div class="hist-who">${e.person}</div></div>
     </div>`;
   }).join("");
 }
 
-function renderSettleCard() {
-  const me=monthExpenses(), settlements=monthAll().filter(e=>e.category==="settle");
+function renderSettleCard(){
+  const me=monthExpenses(),settlements=monthAll().filter(e=>e.category==="settle");
   const card=document.getElementById("settle-card");
   if(!me.length){card.classList.remove("visible");return;}
   card.classList.add("visible");
@@ -531,7 +566,7 @@ function renderSettleCard() {
   });
   const total=raw["安"]+raw["佐"],fair=total/2,diff=eff["安"]-eff["佐"];
   const gap=Math.abs(Math.round(diff/2)),payer=diff>0?"佐":"安",recv=diff>0?"安":"佐";
-  let ph=["安","佐"].map(p=>{
+  document.getElementById("settle-people-area").innerHTML=["安","佐"].map(p=>{
     const over=Math.round(eff[p]-fair);
     const lc=over>0?"#B03A20":"#5A8A5A";
     const label=over>0?`多付 NT$ ${Math.abs(over).toLocaleString()}`:`少付 NT$ ${Math.abs(over).toLocaleString()}`;
@@ -541,18 +576,17 @@ function renderSettleCard() {
       <div style="font-size:11px;color:${lc};margin-top:2px">${label}</div>
     </div>`;
   }).join("");
-  document.getElementById("settle-people-area").innerHTML=ph;
   const box=document.getElementById("settle-amount-box"),trigBtn=document.getElementById("settle-trigger-btn");
   if(gap===0){
     box.innerHTML=`<div style="color:#5A8A5A;font-size:14px;font-weight:700;padding:4px 0">✓ 已結清，兩人平衡！</div>`;
     trigBtn.style.display="none";
-  } else {
+  }else{
     box.innerHTML=`<div style="font-size:12px;color:#B09070;margin-bottom:4px">需要轉帳</div>
       <div style="font-size:13px;color:#7A6048"><b style="color:${PC[payer]}">${payer}</b> 需要給 <b style="color:${PC[recv]}">${recv}</b></div>
       <div style="font-size:26px;font-weight:700;color:#7A6BAA;margin:8px 0 2px;letter-spacing:-.02em">NT$ ${gap.toLocaleString()}</div>
       <div style="font-size:11px;color:#B09070">給了之後本月餘額歸零</div>`;
     trigBtn.style.display="block";
-    trigBtn.dataset.payer=payer; trigBtn.dataset.recv=recv; trigBtn.dataset.gap=gap;
+    trigBtn.dataset.payer=payer;trigBtn.dataset.recv=recv;trigBtn.dataset.gap=gap;
   }
   hideSettleConfirm();
   const histDiv=document.getElementById("settle-history");
@@ -562,46 +596,45 @@ function renderSettleCard() {
       settlements.map(e=>`<div style="display:flex;justify-content:space-between;font-size:12px;color:#7A6048;padding:5px 0">
         <span>${e.note} 已轉帳</span><span style="font-weight:700;color:#7A6BAA">NT$ ${Number(e.amount).toLocaleString()}</span>
       </div>`).join("");
-  } else { histDiv.style.display="none"; }
+  }else{histDiv.style.display="none";}
 }
 
-function showSettleConfirm() {
+function showSettleConfirm(){
   const btn=document.getElementById("settle-trigger-btn");
   document.getElementById("settle-confirm-desc").textContent=`將記錄「${btn.dataset.payer} 已給 ${btn.dataset.recv} NT$ ${Number(btn.dataset.gap).toLocaleString()}」到試算表，本月餘額歸零。`;
   document.getElementById("settle-confirm-area").style.display="block";
   btn.style.display="none";
 }
-function hideSettleConfirm() {
-  document.getElementById("settle-confirm-area").style.display="none";
-}
-async function doSettle() {
+function hideSettleConfirm(){document.getElementById("settle-confirm-area").style.display="none";}
+
+async function doSettle(){
   const btn=document.getElementById("settle-trigger-btn"),okBtn=document.getElementById("settle-ok-btn");
   const payer=btn.dataset.payer,recv=btn.dataset.recv,gap=Number(btn.dataset.gap);
-  okBtn.disabled=true; okBtn.textContent="記錄中…";
+  okBtn.disabled=true;okBtn.textContent="記錄中…";
   const payload={person:payer,category:"settle",categoryLabel:"結算",amount:gap,note:`${payer}→${recv}`,month:MONTH};
-  try {
+  try{
     await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)});
     entries.push({...payload,timestamp:new Date().toLocaleString("zh-TW")});
     showToast("✓ 結算完成！","ok");
     renderDashboard();
-  } catch { showToast("結算失敗，請重試","err"); }
-  finally { okBtn.disabled=false; okBtn.textContent="✓ 確認結算"; }
+  }catch{showToast("結算失敗，請重試","err");}
+  finally{okBtn.disabled=false;okBtn.textContent="✓ 確認結算";}
 }
 
-function updateDashTab() {
+function updateDashTab(){
   const n=monthExpenses().length;
   document.getElementById("tab-dashboard").textContent="📊  本月概況"+(n>0?` (${n})`:"");
 }
 
 let toastTimer;
-function showToast(msg,type="ok") {
+function showToast(msg,type="ok"){
   const el=document.getElementById("toast");
-  el.textContent=msg; el.style.background=type==="err"?"#B03A20":"#2E6B66";
-  el.classList.add("show"); clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>el.classList.remove("show"),3000);
+  el.textContent=msg;el.style.background=type==="err"?"#B03A20":"#2E6B66";
+  el.classList.add("show");clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove("show"),4000);
 }
 
-// 啟動時自動載入資料
+// start
 fetchData();
 </script>
 </body>
