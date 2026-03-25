@@ -110,7 +110,12 @@ input[type=number]{-moz-appearance:textfield}
   </div>
   <div id="tabs">
     <button class="tab-btn active" id="tab-form" onclick="switchTab('form')">📝  記帳</button>
-    <button class="tab-btn" id="tab-dashboard" onclick="switchTab('dashboard')">📊  本月概況</button>
+    <button class="tab-btn" id="tab-dashboard" onclick="switchTab('dashboard')">📊  本月</button>
+    <button class="tab-btn" id="tab-analysis" onclick="switchTab('analysis')">📈  分析</button>
+    <a href="https://docs.google.com/spreadsheets/d/1IF42Ex6ISMapthjAIhdKfKwJ0bDhn6XJYBsl8vLUmGQ/edit?gid=0#gid=0" target="_blank" class="tab-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center;color:#B09070">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-right:3px"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      試算表
+    </a>
   </div>
   <div id="wave"></div>
 </div>
@@ -209,7 +214,6 @@ input[type=number]{-moz-appearance:textfield}
           <svg width="15" height="15" viewBox="0 0 24 24" fill="#7A6BAA"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
           <span style="font-size:13px;font-weight:700;color:#7A6BAA">累積結算</span>
         </div>
-        <div class="settle-people" id="settle-people-area"></div>
         <div class="settle-amount-box" id="settle-amount-box"></div>
         <button id="settle-trigger-btn" style="width:100%;padding:13px;border-radius:12px;border:none;background:#7A6BAA;color:#fff;font-size:15px;font-weight:700;display:none" onclick="showSettleConfirm()">確認已完成轉帳</button>
         <div id="settle-confirm-area" style="background:#fff;border:1.5px solid #7A6BAA;border-radius:12px;padding:16px;text-align:center;display:none">
@@ -226,7 +230,18 @@ input[type=number]{-moz-appearance:textfield}
   </div>
 </div>
 
-<!-- SUMMARY SHEET -->
+<!-- ANALYSIS TAB -->
+  <div id="view-analysis" style="display:none">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div class="section-lbl" style="margin-bottom:0">月份支出分析</div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <select id="analysis-year" class="ghost" style="padding:5px 8px;font-size:12px;border-radius:8px"></select>
+        </div>
+      </div>
+      <div id="analysis-content"></div>
+    </div>
+  </div>
 <div class="overlay hidden" id="sum-overlay" onclick="closeSumSheet()">
   <div class="bottom-sheet" onclick="event.stopPropagation()">
     <div class="sheet-handle"></div>
@@ -306,15 +321,17 @@ document.getElementById("img-zo").src = IMG_ZO;
 // ── tab ────────────────────────────────────────────────────────────────
 function switchTab(t){
   curTab=t;
-  document.getElementById("view-form").style.display      = t==="form"      ?"":"none";
-  document.getElementById("view-dashboard").style.display = t==="dashboard" ?"":"none";
+  document.getElementById("view-form").style.display      = t==="form"     ?"block":"none";
+  document.getElementById("view-dashboard").style.display = t==="dashboard"?"block":"none";
+  document.getElementById("view-analysis").style.display  = t==="analysis" ?"block":"none";
   document.getElementById("tab-form").classList.toggle("active",      t==="form");
   document.getElementById("tab-dashboard").classList.toggle("active", t==="dashboard");
+  document.getElementById("tab-analysis").classList.toggle("active",  t==="analysis");
   if(t==="dashboard"){
-    // show correct state based on loading flag
     if(isLoading) showDashState("loading");
     else renderDashboard();
   }
+  if(t==="analysis") renderAnalysis();
 }
 
 // ── form ───────────────────────────────────────────────────────────────
@@ -713,17 +730,7 @@ function renderSettleCard(){
   const payer=diff>0?"佐":"安";
   const recv =diff>0?"安":"佐";
 
-  // per-person blocks
-  document.getElementById("settle-people-area").innerHTML=["安","佐"].map(p=>{
-    const over=Math.round(eff[p]-fair);
-    const lc=over>0?"#B03A20":"#5A8A5A";
-    const label=over>0?`累積多付 NT$ ${Math.abs(over).toLocaleString()}`:`累積少付 NT$ ${Math.abs(over).toLocaleString()}`;
-    return `<div class="settle-person ${p==="安"?"an":"zo"}">
-      <div style="font-size:12px;color:${PC[p]};font-weight:700;margin-bottom:4px">${p}</div>
-      <div style="font-size:15px;font-weight:700;color:#3E2A14">NT$ ${raw[p].toLocaleString()}</div>
-      <div style="font-size:11px;color:${lc};margin-top:2px">${label}</div>
-    </div>`;
-  }).join("");
+  // per-person blocks removed per request
 
   const box=document.getElementById("settle-amount-box");
   const trigBtn=document.getElementById("settle-trigger-btn");
@@ -788,7 +795,138 @@ async function doSettle(){
 
 function updateDashTab(){
   const n=monthExpenses().length;
-  document.getElementById("tab-dashboard").textContent="📊  本月概況"+(n>0?` (${n})`:"");
+  document.getElementById("tab-dashboard").textContent="📊  本月"+(n>0?` (${n})`:"");
+}
+
+// ── analysis ───────────────────────────────────────────────────────────
+function renderAnalysis(){
+  const expenses = entries.filter(e=>e.category!=="settle");
+  if(!expenses.length){
+    document.getElementById("analysis-content").innerHTML=`<div style="text-align:center;padding:32px;color:#B09070;font-size:14px">請先同步資料</div>`;
+    return;
+  }
+
+  // build monthly totals map: { "2025-03": { total, an, zo, cats:{} } }
+  const monthly={};
+  expenses.forEach(e=>{
+    const m=normalizeMonth(e.month);
+    if(!m) return;
+    if(!monthly[m]) monthly[m]={total:0,an:0,zo:0,cats:{}};
+    const amt=Number(e.amount);
+    monthly[m].total+=amt;
+    if(e.person==="安") monthly[m].an+=amt;
+    if(e.person==="佐") monthly[m].zo+=amt;
+    monthly[m].cats[e.category]=(monthly[m].cats[e.category]||0)+amt;
+  });
+
+  const allMonths=Object.keys(monthly).sort();
+  const years=[...new Set(allMonths.map(m=>m.slice(0,4)))].sort().reverse();
+
+  // populate year selector
+  const sel=document.getElementById("analysis-year");
+  const curSelYear=sel.value||years[0];
+  sel.innerHTML=years.map(y=>`<option value="${y}" ${y===curSelYear?"selected":""}>${y} 年</option>`).join("");
+  sel.onchange=()=>renderAnalysis();
+
+  const selYear=sel.value||years[0];
+  const prevYear=String(Number(selYear)-1);
+
+  const MONTHS=["01","02","03","04","05","06","07","08","09","10","11","12"];
+  const curData=MONTHS.map(m=>monthly[`${selYear}-${m}`]||null);
+  const prevData=MONTHS.map(m=>monthly[`${prevYear}-${m}`]||null);
+  const monthLabels=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+
+  const maxVal=Math.max(...curData.map(d=>d?d.total:0),...prevData.map(d=>d?d.total:0),1);
+  const barW=100/12;
+
+  // bar chart SVG
+  const svgH=180, labelH=20, barArea=svgH-labelH-10;
+  let bars="";
+  MONTHS.forEach((m,i)=>{
+    const cur=curData[i], prev=prevData[i];
+    const x=i*barW;
+    const bw=barW*0.38;
+    if(prev){
+      const bh=Math.round((prev.total/maxVal)*barArea);
+      const by=barArea-bh+10;
+      bars+=`<rect x="${x+barW*0.08}%" y="${by}" width="${bw}%" height="${bh}" rx="2" fill="#D5C5E8" opacity="0.8"/>`;
+    }
+    if(cur){
+      const bh=Math.round((cur.total/maxVal)*barArea);
+      const by=barArea-bh+10;
+      bars+=`<rect x="${x+barW*0.08+bw+barW*0.04}%" y="${by}" width="${bw}%" height="${bh}" rx="2" fill="#7A6BAA"/>`;
+    }
+    bars+=`<text x="${x+barW/2}%" y="${svgH-2}" text-anchor="middle" font-size="9" fill="#B09070" font-family="inherit">${monthLabels[i]}</text>`;
+  });
+
+  // year total comparison
+  const curTotal=curData.reduce((s,d)=>s+(d?d.total:0),0);
+  const prevTotal=prevData.reduce((s,d)=>s+(d?d.total:0),0);
+  const diff=curTotal-prevTotal;
+  const diffSign=diff>=0?"+":"";
+  const diffColor=diff>=0?"#B03A20":"#5A8A5A";
+
+  // monthly table
+  let tableRows="";
+  MONTHS.forEach((m,i)=>{
+    const cur=curData[i], prev=prevData[i];
+    if(!cur&&!prev) return;
+    const curAmt=cur?cur.total:0, prevAmt=prev?prev.total:0;
+    const d=curAmt-prevAmt;
+    const dc=d>=0?"#C04A2A":"#5A8A5A";
+    const ds=(d>=0?"+":"")+d.toLocaleString();
+    tableRows+=`<tr style="border-bottom:1px solid #F0E8D8">
+      <td style="padding:7px 4px;font-size:13px;color:#7A6048;font-weight:600">${monthLabels[i]}</td>
+      <td style="padding:7px 4px;text-align:right;font-size:13px;color:#7A6BAA;font-weight:700">${curAmt?'NT$ '+curAmt.toLocaleString():'-'}</td>
+      <td style="padding:7px 4px;text-align:right;font-size:12px;color:#B09070">${prevAmt?'NT$ '+prevAmt.toLocaleString():'-'}</td>
+      <td style="padding:7px 4px;text-align:right;font-size:12px;color:${dc};font-weight:600">${curAmt&&prevAmt?ds:'-'}</td>
+    </tr>`;
+  });
+
+  document.getElementById("analysis-content").innerHTML=`
+    <div style="display:flex;gap:10px;margin-bottom:16px">
+      <div style="flex:1;background:#F0EEF8;border:1px solid rgba(122,107,170,.2);border-radius:12px;padding:12px 14px">
+        <div style="font-size:11px;color:#B09070;margin-bottom:3px">${selYear} 年總支出</div>
+        <div style="font-size:18px;font-weight:700;color:#7A6BAA">NT$ ${curTotal.toLocaleString()}</div>
+      </div>
+      <div style="flex:1;background:#FBF7EF;border:1px solid #E8DECA;border-radius:12px;padding:12px 14px">
+        <div style="font-size:11px;color:#B09070;margin-bottom:3px">vs ${prevYear} 年</div>
+        <div style="font-size:18px;font-weight:700;color:${diffColor}">${prevTotal?diffSign+diff.toLocaleString():'—'}</div>
+        ${prevTotal?`<div style="font-size:10px;color:#B09070;margin-top:1px">${prevYear} 年 NT$ ${prevTotal.toLocaleString()}</div>`:''}
+      </div>
+    </div>
+
+    <div style="margin-bottom:6px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#7A6048">
+          <div style="width:10px;height:10px;border-radius:2px;background:#7A6BAA"></div>${selYear}
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#B09070">
+          <div style="width:10px;height:10px;border-radius:2px;background:#D5C5E8"></div>${prevYear}
+        </div>
+      </div>
+      <svg width="100%" height="${svgH}" style="display:block;overflow:visible">${bars}</svg>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;margin-top:8px">
+      <thead>
+        <tr style="border-bottom:2px solid #E8DECA">
+          <th style="padding:6px 4px;text-align:left;font-size:11px;color:#B09070;font-weight:600"></th>
+          <th style="padding:6px 4px;text-align:right;font-size:11px;color:#7A6BAA;font-weight:600">${selYear}</th>
+          <th style="padding:6px 4px;text-align:right;font-size:11px;color:#B09070;font-weight:600">${prevYear}</th>
+          <th style="padding:6px 4px;text-align:right;font-size:11px;color:#B09070;font-weight:600">差異</th>
+        </tr>
+      </thead>
+      <tbody>${tableRows}</tbody>
+      <tfoot>
+        <tr style="background:#FAF6EE">
+          <td style="padding:8px 4px;font-size:12px;font-weight:700;color:#3E2A14">全年</td>
+          <td style="padding:8px 4px;text-align:right;font-size:13px;font-weight:700;color:#7A6BAA">NT$ ${curTotal.toLocaleString()}</td>
+          <td style="padding:8px 4px;text-align:right;font-size:12px;color:#B09070">${prevTotal?'NT$ '+prevTotal.toLocaleString():'-'}</td>
+          <td style="padding:8px 4px;text-align:right;font-size:12px;font-weight:600;color:${diffColor}">${prevTotal?diffSign+diff.toLocaleString():'-'}</td>
+        </tr>
+      </tfoot>
+    </table>`;
 }
 
 let toastTimer;
