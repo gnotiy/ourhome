@@ -423,7 +423,21 @@ function monthAll()     {return entries.filter(e=>e.month===MONTH);}
 
 function renderDashboard(){
   const me=monthExpenses(),all=monthAll();
-  if(!me.length&&!all.filter(e=>e.category==="settle").length){showDashState("empty");return;}
+  // debug: show what month values look like
+  const sample=entries.slice(0,3).map(e=>e.month);
+  console.log("MONTH key:", MONTH, "| sample months:", sample, "| total entries:", entries.length);
+  if(!me.length&&!all.filter(e=>e.category==="settle").length){
+    // show debug info on screen
+    const el=document.getElementById("dash-empty");
+    const dbg=`<div style="margin-top:16px;padding:12px;background:#FEF4EA;border-radius:10px;font-size:11px;color:#7A6048;text-align:left;font-family:monospace">
+      <b>debug</b><br/>
+      App 月份：${MONTH}<br/>
+      資料筆數：${entries.length}<br/>
+      前3筆月份：${entries.slice(0,3).map(e=>JSON.stringify(e.month)).join(", ")}
+    </div>`;
+    el.innerHTML=`<p>本月還沒有記帳紀錄</p><button class="sea-btn" onclick="switchTab('form')">開始記帳</button>${dbg}`;
+    showDashState("empty");return;
+  }
   showDashState("content");
   renderSummaryCard();
   renderSettleCard();
