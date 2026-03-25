@@ -337,6 +337,7 @@ async function submitEntry(){
   const payload={person:selPerson,category:selCat,categoryLabel:catLabel(selCat),amount:amt,note,month:MONTH};
   try{
     await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)});
+    // optimistically add locally so summary sheet shows immediately
     entries.push({...payload,timestamp:new Date().toLocaleString("zh-TW")});
     document.getElementById("amt-input").value="";
     document.getElementById("note-input").value="";
@@ -345,6 +346,8 @@ async function submitEntry(){
     document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
     updateDashTab();
     openSumSheet();
+    // re-sync from sheet after 2s to confirm write
+    setTimeout(()=>fetchData(), 2000);
   }catch{showToast("送出失敗，請重試","err");}
   finally{btn.disabled=false;btn.textContent="送出記帳";}
 }
@@ -665,15 +668,19 @@ function hideSettleConfirm(){document.getElementById("settle-confirm-area").styl
 async function doSettle(){
   const btn=document.getElementById("settle-trigger-btn"),okBtn=document.getElementById("settle-ok-btn");
   const payer=btn.dataset.payer,recv=btn.dataset.recv,gap=Number(btn.dataset.gap);
+  if(!gap||gap<=0){ hideSettleConfirm(); return; }
   okBtn.disabled=true;okBtn.textContent="記錄中…";
   const payload={person:payer,category:"settle",categoryLabel:"結算",amount:gap,note:`${payer}→${recv}`,month:MONTH};
   try{
     await fetch(SCRIPT_URL,{method:"POST",mode:"no-cors",body:JSON.stringify(payload)});
-    entries.push({...payload,timestamp:new Date().toLocaleString("zh-TW")});
-    showToast("✓ 結算完成！","ok");
-    renderDashboard();
-  }catch{showToast("結算失敗，請重試","err");}
-  finally{okBtn.disabled=false;okBtn.textContent="✓ 確認結算";}
+    showToast("✓ 結算已送出，正在同步…","ok");
+    hideSettleConfirm();
+    // wait 1.5s for sheet to write, then re-fetch to confirm
+    setTimeout(()=>{ fetchData(); },1500);
+  }catch{
+    showToast("結算失敗，請重試","err");
+    okBtn.disabled=false;okBtn.textContent="✓ 確認結算";
+  }
 }
 
 function updateDashTab(){
