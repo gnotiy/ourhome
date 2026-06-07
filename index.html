@@ -3,96 +3,148 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<meta name="color-scheme" content="light dark"/>
 <title>共同支出紀錄</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=DM+Mono:wght@500&display=swap" rel="stylesheet"/>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#F5EFE3;font-family:'Noto Serif TC',Georgia,serif;color:#3E2A14;min-height:100vh}
+:root{
+  --bg:#F7F5F0;--sf:#FFFFFF;--sf2:#EFEFEA;
+  --bd:rgba(0,0,0,.09);--bds:rgba(0,0,0,.15);
+  --t1:#1A1917;--t2:#5A5854;--t3:#9A9692;
+  --an:#C97B3A;--anl:#FBEFE2;        /* 安 橘 + 淺底 */
+  --zo:#3E8F89;--zol:#E4F1F0;        /* 佐 青 + 淺底 */
+  --pu:#7A6BAA;--pul:#EFEDF7;        /* 結算 紫 + 淺底 */
+  --g:#1D9E75;--gl:#E1F5EE;          /* 減少/良好 綠 */
+  --r:#E24B4A;--rl:#FEF0F0;          /* 增加/超支 紅 */
+  --ra:14px;--rs:8px;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#141412;--sf:#1E1D1B;--sf2:#272522;
+  --bd:rgba(255,255,255,.08);--bds:rgba(255,255,255,.16);
+  --t1:#F0EDE8;--t2:#A09C97;--t3:#6A6662;
+  --anl:#2E2114;--zol:#0E2624;--pul:#1E1B2C;
+  --gl:#0A2E1E;--rl:#2E0F0E;
+}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);font-family:'Noto Sans TC',sans-serif;color:var(--t1);min-height:100vh;-webkit-font-smoothing:antialiased}
 button{font-family:inherit;cursor:pointer}
 input{font-family:inherit}
 input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 input[type=number]{-moz-appearance:textfield}
 ::-webkit-scrollbar{width:4px}
-::-webkit-scrollbar-thumb{background:#D5C5A8;border-radius:2px}
+::-webkit-scrollbar-thumb{background:var(--bds);border-radius:2px}
+.mono{font-family:'DM Mono',monospace;letter-spacing:-.3px}
 
-#header{background:#FFFDF8;border-bottom:1px solid #E8DECA;padding:0 20px;position:sticky;top:0;z-index:50}
-#header-top{display:flex;align-items:center;justify-content:space-between;padding-top:14px;padding-bottom:2px}
-#header h1{font-size:17px;font-weight:700;color:#3E2A14}
-#header-sub{font-size:11px;color:#B09070;margin-top:2px}
-#tabs{display:flex;margin-top:10px;border-top:1px solid #E8DECA}
-.tab-btn{flex:1;padding:10px 0;border:none;background:transparent;font-size:13px;color:#B09070;border-bottom:2px solid transparent;transition:all .18s;font-weight:400}
-.tab-btn.active{color:#4A8F8A;font-weight:700;border-bottom-color:#4A8F8A}
-#wave{height:5px;background:linear-gradient(90deg,#EAF6F5,#EAF6F5 30%,#E8D5B0 60%,#FEF4EA);opacity:.7}
+#header{background:var(--sf);border-bottom:1px solid var(--bd);padding:0 18px;position:sticky;top:0;z-index:50}
+#header-top{display:flex;align-items:center;justify-content:space-between;padding-top:16px;padding-bottom:4px}
+#header h1{font-size:18px;font-weight:700;color:var(--t1)}
+#header-sub{font-size:11px;color:var(--t3);margin-top:2px;font-family:'DM Mono',monospace}
+#tabs{display:flex;margin-top:10px;gap:2px}
+.tab-btn{flex:1;padding:10px 0;border:none;background:transparent;font-size:13px;color:var(--t3);border-bottom:2px solid transparent;transition:all .18s;font-weight:500}
+.tab-btn.active{color:var(--t1);font-weight:700;border-bottom-color:var(--t1)}
+#wave{height:3px;background:linear-gradient(90deg,var(--an),var(--zo) 55%,var(--pu));opacity:.55}
 
-#content{max-width:620px;margin:0 auto;padding:20px 16px 60px}
-.card{background:#FFFDF8;border:1px solid #E8DECA;border-radius:16px;padding:20px;margin-bottom:16px}
-.section-lbl{font-size:11px;color:#B09070;letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-bottom:10px}
-.field-lbl{display:block;font-size:13px;color:#7A6048;margin-bottom:8px}
-.req{color:#C97B3A;margin-left:2px}
+#content{max-width:620px;margin:0 auto;padding:18px 14px 60px}
+.card{background:var(--sf);border:1px solid var(--bd);border-radius:var(--ra);padding:18px;margin-bottom:14px}
+.section-lbl{font-size:11px;color:var(--t3);letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-bottom:10px}
+.field-lbl{display:block;font-size:13px;color:var(--t2);margin-bottom:8px}
+.req{color:var(--an);margin-left:2px}
 
 #person-grid{display:flex;gap:12px;margin-bottom:20px}
-.person-btn{flex:1;padding:16px 12px;border-radius:14px;border:1.5px solid #E8DECA;background:#FBF7EF;display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .18s}
-.person-btn.active-an{border:2px solid #C97B3A;background:#FEF4EA}
-.person-btn.active-zo{border:2px solid #4A8F8A;background:#EAF6F5}
-.person-name{font-size:15px;font-weight:700;color:#B09070}
-.person-btn.active-an .person-name{color:#C97B3A}
-.person-btn.active-zo .person-name{color:#4A8F8A}
+.person-btn{flex:1;padding:16px 12px;border-radius:var(--ra);border:1px solid var(--bds);background:var(--sf2);display:flex;flex-direction:column;align-items:center;gap:8px;transition:all .18s}
+.person-btn:active{transform:scale(.97)}
+.person-btn.active-an{border:2px solid var(--an);background:var(--anl)}
+.person-btn.active-zo{border:2px solid var(--zo);background:var(--zol)}
+.person-name{font-size:15px;font-weight:700;color:var(--t3)}
+.person-btn.active-an .person-name{color:var(--an)}
+.person-btn.active-zo .person-name{color:var(--zo)}
 
-.group-title{font-size:11px;color:#B09070;letter-spacing:.06em;text-transform:uppercase;font-weight:700;margin:14px 0 6px}
-.cat-btn{padding:7px 13px;border-radius:20px;border:1px solid #E8DECA;background:#FBF7EF;color:#7A6048;font-size:13px;margin:0 6px 6px 0;transition:all .15s;white-space:nowrap}
-.cat-btn.active{border:1.5px solid #4A8F8A;background:#EAF6F5;color:#2E6B66;font-weight:700}
+.group-title{font-size:11px;color:var(--t3);letter-spacing:.06em;text-transform:uppercase;font-weight:700;margin:14px 0 6px}
+.cat-btn{padding:7px 13px;border-radius:20px;border:1px solid var(--bds);background:var(--sf2);color:var(--t2);font-size:13px;margin:0 6px 6px 0;transition:all .15s;white-space:nowrap}
+.cat-btn:active{transform:scale(.96)}
+.cat-btn.active{border:1.5px solid var(--zo);background:var(--zol);color:var(--zo);font-weight:700}
 
 .amt-wrap{position:relative;margin:16px 0}
-.amt-prefix{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#B09070;font-size:13px;pointer-events:none}
-#amt-input{width:100%;padding:12px 13px 12px 42px;border-radius:10px;border:1px solid #E8DECA;background:#FBF7EF;color:#3E2A14;font-size:16px;outline:none}
-#note-input{width:100%;padding:11px 13px;border-radius:10px;border:1px solid #E8DECA;background:#FBF7EF;color:#3E2A14;font-size:14px;margin-bottom:16px;outline:none}
-#err-msg{color:#C04A2A;font-size:13px;margin-bottom:12px;text-align:center;display:none}
-#submit-btn{width:100%;padding:14px;border-radius:12px;border:none;background:#4A8F8A;color:#fff;font-size:16px;font-weight:700;letter-spacing:.04em;transition:background .2s}
-#submit-btn:disabled{background:#8FBFBC;cursor:not-allowed}
+.amt-prefix{position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--t3);font-size:13px;pointer-events:none}
+#amt-input{width:100%;padding:12px 13px 12px 42px;border-radius:var(--rs);border:1px solid var(--bds);background:var(--bg);color:var(--t1);font-size:16px;outline:none}
+#note-input{width:100%;padding:11px 13px;border-radius:var(--rs);border:1px solid var(--bds);background:var(--bg);color:var(--t1);font-size:14px;margin-bottom:16px;outline:none}
+#amt-input:focus,#note-input:focus,#date-input:focus{border-color:var(--zo)}
+#date-input{width:100%;padding:11px 13px;border-radius:var(--rs);border:1px solid var(--bds);background:var(--bg);color:var(--t1);font-size:15px;font-family:inherit;margin-bottom:4px;outline:none;color-scheme:light dark}
+#err-msg{color:var(--r);font-size:13px;margin-bottom:12px;text-align:center;display:none}
+#submit-btn{width:100%;padding:14px;border-radius:var(--rs);border:none;background:var(--t1);color:var(--bg);font-size:16px;font-weight:700;letter-spacing:.04em;transition:opacity .2s}
+#submit-btn:active{opacity:.85}
+#submit-btn:disabled{opacity:.5;cursor:not-allowed}
 
-.ghost{padding:6px 12px;border-radius:8px;border:1px solid #E8DECA;background:transparent;color:#7A6048;font-size:12px}
+.ghost{padding:6px 12px;border-radius:20px;border:1px solid var(--bds);background:var(--sf);color:var(--t3);font-size:12px}
+.ghost:active{opacity:.7}
 
-.overlay{position:fixed;inset:0;background:rgba(62,42,20,.45);z-index:100;display:flex;align-items:flex-end;justify-content:center}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;display:flex;align-items:flex-end;justify-content:center}
 .overlay.hidden{display:none}
-.bottom-sheet{background:#FFFDF8;border-radius:20px 20px 0 0;border:1px solid #E8DECA;padding:20px 20px 36px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto}
-.sheet-handle{width:40px;height:4px;border-radius:2px;background:#E8DECA;margin:0 auto 16px}
+.bottom-sheet{background:var(--sf);border-radius:20px 20px 0 0;border:1px solid var(--bd);padding:20px 20px 36px;max-width:620px;width:100%;max-height:90vh;overflow-y:auto}
+.sheet-handle{width:40px;height:4px;border-radius:2px;background:var(--bds);margin:0 auto 16px}
 
-#settle-card{background:#F0EEF8;border:1.5px solid rgba(122,107,170,.27);border-radius:16px;padding:20px;margin-bottom:16px;display:none}
-#settle-card.visible{display:block}
-.settle-people{display:flex;gap:10px;margin-bottom:14px}
-.settle-person{flex:1;border-radius:12px;padding:10px 12px}
-.settle-person.an{background:#FEF4EA;border:1px solid rgba(201,123,58,.2)}
-.settle-person.zo{background:#EAF6F5;border:1px solid rgba(74,143,138,.2)}
-.settle-amount-box{background:#fff;border:1px solid rgba(122,107,170,.2);border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:center}
+/* 指標卡（同記帳很重要） */
+.m3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.mc{background:var(--sf2);border-radius:var(--rs);padding:12px;text-align:center}
+.ml{font-size:11px;color:var(--t3)}
+.mn{font-size:17px;font-weight:700;margin-top:4px;font-family:'DM Mono',monospace;letter-spacing:-.5px}
+.mn-sub{font-size:10px;color:var(--t3);margin-top:3px;font-family:'DM Mono',monospace}
+.gi{color:var(--g)}.ri{color:var(--r)}.ani{color:var(--an)}.zoi{color:var(--zo)}.pui{color:var(--pu)}
 
+/* 圖例 + 類別明細 */
 .chart-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px}
 .legend-item{display:flex;align-items:center;gap:5px;font-size:12px}
 .legend-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.cat-list{display:flex;flex-direction:column}
+.cat-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--bd)}
+.cat-row:last-child{border-bottom:none}
+.cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-name{flex:1;font-size:13px;color:var(--t2)}
+.cat-bar-wrap{width:60px;height:4px;background:var(--sf2);border-radius:2px;overflow:hidden}
+.cat-bar{height:100%;border-radius:2px}
+.cat-pct{font-size:11px;color:var(--t3);min-width:32px;text-align:right}
+.cat-amt{font-size:13px;font-family:'DM Mono',monospace;font-weight:500;min-width:62px;text-align:right;color:var(--t1)}
 
-.hist-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #E8DECA}
-.hist-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.hist-cat{font-size:13px;color:#3E2A14;font-weight:600}
-.hist-note{font-size:11px;color:#B09070;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.hist-amt{font-size:15px;font-weight:700;text-align:right}
-.hist-who{font-size:10px;color:#B09070;margin-top:1px;text-align:right}
+/* 同期比較列 */
+.yoy-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd)}
+.yoy-row:last-child{border-bottom:none}
+.yoy-lbl{font-size:13px;color:var(--t2);flex:1}
+.yoy-vals{display:flex;align-items:center;gap:8px}
+.yoy-cur{font-size:13px;font-family:'DM Mono',monospace;min-width:64px;text-align:right;color:var(--t1)}
+.yoy-diff{font-size:11px;font-family:'DM Mono',monospace;min-width:58px;text-align:right;padding:2px 5px;border-radius:4px}
+.yoy-diff.up{color:var(--r);background:var(--rl)}
+.yoy-diff.dn{color:var(--g);background:var(--gl)}
+.yoy-diff.eq{color:var(--t3)}
 
-.person-stats{display:flex;gap:10px;margin-top:16px}
-.pstat{flex:1;border-radius:12px;padding:12px 14px}
-.pstat.an{background:#FEF4EA;border:1px solid rgba(201,123,58,.2)}
-.pstat.zo{background:#EAF6F5;border:1px solid rgba(74,143,138,.2)}
+/* 結算卡 */
+#settle-card{background:var(--pul);border:1px solid var(--bd);border-radius:var(--ra);padding:20px;margin-bottom:14px;display:none}
+#settle-card.visible{display:block}
+.settle-amount-box{background:var(--sf);border:1px solid var(--bds);border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:center}
 
-/* dash states */
-#dash-loading{text-align:center;padding:64px 24px;color:#B09070}
+/* 明細列 */
+.hist-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd)}
+.hist-row:last-child{border-bottom:none}
+.hist-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.hist-cat{font-size:13px;color:var(--t1);font-weight:600}
+.hist-note{font-size:11px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist-amt{font-size:15px;font-weight:700;text-align:right;font-family:'DM Mono',monospace}
+.hist-who{font-size:10px;color:var(--t3);margin-top:1px;text-align:right}
+
+/* dash 狀態 */
+#dash-loading{text-align:center;padding:64px 24px;color:var(--t3)}
 #dash-loading p{font-size:14px;margin-top:12px}
 #dash-error{display:none;text-align:center;padding:48px 24px}
 #dash-empty{display:none;text-align:center;padding:48px 24px}
-#dash-empty p,#dash-error p{color:#7A6048;font-size:14px;margin-top:12px}
-.sea-btn{padding:10px 24px;border-radius:12px;border:none;background:#4A8F8A;color:#fff;font-size:15px;font-weight:700;margin-top:16px}
-.err-btn{padding:10px 24px;border-radius:12px;border:none;background:#C97B3A;color:#fff;font-size:15px;font-weight:700;margin-top:16px}
+#dash-empty p,#dash-error p{color:var(--t2);font-size:14px;margin-top:12px}
+.sea-btn{padding:10px 24px;border-radius:12px;border:none;background:var(--t1);color:var(--bg);font-size:15px;font-weight:700;margin-top:16px}
+.err-btn{padding:10px 24px;border-radius:12px;border:1px solid var(--bds);background:var(--sf);color:var(--t1);font-size:15px;font-weight:700;margin-top:16px}
 #dash-content{display:none}
 
 #toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);color:#fff;border-radius:24px;padding:10px 22px;font-size:14px;font-weight:600;z-index:200;white-space:nowrap;pointer-events:none;transition:opacity .3s;opacity:0}
 #toast.show{opacity:1}
+#toast.big{font-size:15.5px;font-weight:700;padding:16px 28px;border-radius:18px;bottom:44px;box-shadow:0 12px 34px rgba(0,0,0,.28)}
+#toast.big.show{animation:toastpop .26s ease}
+@keyframes toastpop{0%{transform:translateX(-50%) scale(.82)}60%{transform:translateX(-50%) scale(1.04)}100%{transform:translateX(-50%) scale(1)}}
 </style>
 </head>
 <body>
@@ -112,7 +164,7 @@ input[type=number]{-moz-appearance:textfield}
     <button class="tab-btn active" id="tab-form" onclick="switchTab('form')">📝  記帳</button>
     <button class="tab-btn" id="tab-dashboard" onclick="switchTab('dashboard')">📊  本月</button>
     <button class="tab-btn" id="tab-analysis" onclick="switchTab('analysis')">📈  分析</button>
-    <a href="https://docs.google.com/spreadsheets/d/1IF42Ex6ISMapthjAIhdKfKwJ0bDhn6XJYBsl8vLUmGQ/edit?gid=0#gid=0" target="_blank" class="tab-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center;color:#B09070">
+    <a href="https://docs.google.com/spreadsheets/d/1IF42Ex6ISMapthjAIhdKfKwJ0bDhn6XJYBsl8vLUmGQ/edit?gid=0#gid=0" target="_blank" class="tab-btn" style="text-decoration:none;display:flex;align-items:center;justify-content:center;color:var(--t3)">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" style="margin-right:3px"><path d="M19 3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V5a2 2 0 00-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
       試算表
     </a>
@@ -139,6 +191,9 @@ input[type=number]{-moz-appearance:textfield}
       <label class="field-lbl">類別<span class="req">*</span></label>
       <div id="cat-grid"></div>
 
+      <label class="field-lbl">日期<span style="color:var(--t3);font-weight:400;margin-left:6px;font-size:11px">預設今天，可改過去或未來</span></label>
+      <input id="date-input" type="date"/>
+
       <div class="amt-wrap">
         <span class="amt-prefix">NT$</span>
         <input id="amt-input" type="number" placeholder="金額" inputmode="numeric"/>
@@ -152,7 +207,7 @@ input[type=number]{-moz-appearance:textfield}
   <!-- DASHBOARD -->
   <div id="view-dashboard" style="display:none">
     <div id="dash-loading">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="#E8D5B0"><ellipse cx="12" cy="16" rx="5" ry="4"/><ellipse cx="7" cy="10" rx="2.5" ry="3"/><ellipse cx="17" cy="10" rx="2.5" ry="3"/><ellipse cx="5" cy="15" rx="2" ry="2.5"/><ellipse cx="19" cy="15" rx="2" ry="2.5"/></svg>
+      <svg width="28" height="28" viewBox="0 0 24 24" style="fill:var(--t3)"><ellipse cx="12" cy="16" rx="5" ry="4"/><ellipse cx="7" cy="10" rx="2.5" ry="3"/><ellipse cx="17" cy="10" rx="2.5" ry="3"/><ellipse cx="5" cy="15" rx="2" ry="2.5"/><ellipse cx="19" cy="15" rx="2" ry="2.5"/></svg>
       <p>正在載入資料…</p>
     </div>
 
@@ -174,22 +229,12 @@ input[type=number]{-moz-appearance:textfield}
           <div class="section-lbl" style="margin-bottom:0" id="summary-month-lbl"></div>
           <button class="ghost" onclick="fetchData()">↻ 重新整理</button>
         </div>
-        <div style="background:#FEF4EA;border:1px solid rgba(201,123,58,.2);border-radius:12px;padding:12px 14px;margin-bottom:10px">
-          <div style="font-size:11px;color:#B09070;margin-bottom:3px">本月總支出</div>
-          <div id="total-amt" style="font-size:22px;font-weight:700;color:#C97B3A"></div>
-          <div id="total-count" style="font-size:11px;color:#B09070;margin-top:2px"></div>
+        <div class="m3">
+          <div class="mc"><div class="ml">本月總支出</div><div id="total-amt" class="mn"></div><div id="total-count" class="mn-sub"></div></div>
+          <div class="mc"><div class="ml">安</div><div id="an-amt" class="mn ani"></div></div>
+          <div class="mc"><div class="ml">佐</div><div id="zo-amt" class="mn zoi"></div></div>
         </div>
-        <div class="person-stats">
-          <div class="pstat an">
-            <div style="font-size:12px;color:#C97B3A;font-weight:700;margin-bottom:4px">安</div>
-            <div id="an-amt" style="font-size:15px;font-weight:700;color:#3E2A14"></div>
-          </div>
-          <div class="pstat zo">
-            <div style="font-size:12px;color:#4A8F8A;font-weight:700;margin-bottom:4px">佐</div>
-            <div id="zo-amt" style="font-size:15px;font-weight:700;color:#3E2A14"></div>
-          </div>
-        </div>
-        <div style="margin-top:16px">
+        <div style="margin-top:6px">
           <div class="section-lbl">類別分佈</div>
           <div style="display:flex;justify-content:center;margin:8px 0">
             <svg id="pie-svg" width="160" height="160" viewBox="-80 -80 160 160"></svg>
@@ -197,13 +242,13 @@ input[type=number]{-moz-appearance:textfield}
           <div class="chart-legend" id="pie-legend"></div>
         </div>
         <div style="margin-top:20px">
-          <div class="section-lbl">各類別金額</div>
-          <svg id="bar-svg" width="100%" style="display:block"></svg>
+          <div class="section-lbl">各類別明細</div>
+          <div class="cat-list" id="cat-detail"></div>
         </div>
         <div style="margin-top:20px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
             <div class="section-lbl" style="margin-bottom:0">記帳明細</div>
-            <button id="history-toggle-btn" onclick="toggleHistory()" style="font-size:12px;color:#4A8F8A;background:transparent;border:none;padding:4px 0;cursor:pointer">顯示全部 ▾</button>
+            <button id="history-toggle-btn" onclick="toggleHistory()" style="font-size:12px;color:var(--zo);background:transparent;border:none;padding:4px 0;cursor:pointer">顯示全部 ▾</button>
           </div>
           <div id="history-list"></div>
         </div>
@@ -211,20 +256,20 @@ input[type=number]{-moz-appearance:textfield}
 
       <div id="settle-card">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="#7A6BAA"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
-          <span style="font-size:13px;font-weight:700;color:#7A6BAA">累積結算</span>
+          <svg width="15" height="15" viewBox="0 0 24 24" style="fill:var(--pu)"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+          <span style="font-size:13px;font-weight:700;color:var(--pu)">累積結算</span>
         </div>
         <div class="settle-amount-box" id="settle-amount-box"></div>
-        <button id="settle-trigger-btn" style="width:100%;padding:13px;border-radius:12px;border:none;background:#7A6BAA;color:#fff;font-size:15px;font-weight:700;display:none" onclick="showSettleConfirm()">確認已完成轉帳</button>
-        <div id="settle-confirm-area" style="background:#fff;border:1.5px solid #7A6BAA;border-radius:12px;padding:16px;text-align:center;display:none">
-          <div style="font-size:14px;font-weight:700;color:#3E2A14;margin-bottom:4px">確定結算嗎？</div>
-          <div id="settle-confirm-desc" style="font-size:12px;color:#7A6048;margin-bottom:14px"></div>
+        <button id="settle-trigger-btn" style="width:100%;padding:13px;border-radius:12px;border:none;background:var(--pu);color:#fff;font-size:15px;font-weight:700;display:none" onclick="showSettleConfirm()">確認已完成轉帳</button>
+        <div id="settle-confirm-area" style="background:var(--sf);border:1.5px solid var(--pu);border-radius:12px;padding:16px;text-align:center;display:none">
+          <div style="font-size:14px;font-weight:700;color:var(--t1);margin-bottom:4px">確定結算嗎？</div>
+          <div id="settle-confirm-desc" style="font-size:12px;color:var(--t2);margin-bottom:14px"></div>
           <div style="display:flex;gap:10px">
             <button class="ghost" style="flex:1;padding:11px;border-radius:10px" onclick="hideSettleConfirm()">取消</button>
-            <button id="settle-ok-btn" style="flex:2;padding:11px;border-radius:10px;border:none;background:#7A6BAA;color:#fff;font-size:14px;font-weight:700" onclick="doSettle()">✓ 確認結算</button>
+            <button id="settle-ok-btn" style="flex:2;padding:11px;border-radius:10px;border:none;background:var(--pu);color:#fff;font-size:14px;font-weight:700" onclick="doSettle()">✓ 確認結算</button>
           </div>
         </div>
-        <div id="settle-history" style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(122,107,170,.15);display:none"></div>
+        <div id="settle-history" style="margin-top:14px;padding-top:14px;border-top:1px solid var(--bd);display:none"></div>
       </div>
     </div>
   </div>
@@ -247,10 +292,10 @@ input[type=number]{-moz-appearance:textfield}
     <div class="sheet-handle"></div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
       <svg width="15" height="15" viewBox="0 0 24 24" fill="#C97B3A"><ellipse cx="12" cy="16" rx="5" ry="4"/><ellipse cx="7" cy="10" rx="2.5" ry="3"/><ellipse cx="17" cy="10" rx="2.5" ry="3"/><ellipse cx="5" cy="15" rx="2" ry="2.5"/><ellipse cx="19" cy="15" rx="2" ry="2.5"/></svg>
-      <span id="sum-title" style="font-size:15px;font-weight:700;color:#3E2A14"></span>
+      <span id="sum-title" style="font-size:15px;font-weight:700;color:var(--t1)"></span>
     </div>
     <div id="sum-body"></div>
-    <button onclick="closeSumSheet()" style="margin-top:16px;width:100%;padding:12px;border-radius:12px;border:1px solid #E8DECA;background:transparent;color:#7A6048;font-size:14px">繼續記帳</button>
+    <button onclick="closeSumSheet()" style="margin-top:16px;width:100%;padding:12px;border-radius:12px;border:1px solid var(--bds);background:transparent;color:var(--t2);font-size:14px">繼續記帳</button>
   </div>
 </div>
 
@@ -299,6 +344,9 @@ function catLabel(c){return(CATS.find(x=>x.code===c)||{label:c}).label;}
 const MONTH=getMonthKey();
 
 document.getElementById("header-sub").textContent=fmtMonth(MONTH);
+function pad2(n){return String(n).padStart(2,"0");}
+function todayStr(){const d=new Date();return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate());}
+document.getElementById("date-input").value = todayStr();
 document.getElementById("img-an").src = IMG_AN;
 document.getElementById("img-zo").src = IMG_ZO;
 
@@ -358,18 +406,27 @@ function submitEntry(){
   const btn=document.getElementById("submit-btn");
   btn.disabled=true;btn.textContent="送出中…";
   const note=document.getElementById("note-input").value;
-  const payload={action:"write",person:selPerson,category:selCat,categoryLabel:catLabel(selCat),amount:amt,note:note,month:MONTH};
+  const dateVal=document.getElementById("date-input").value||todayStr();
+  const dObj=new Date(dateVal+"T00:00:00");
+  if(isNaN(dObj.getTime())){btn.disabled=false;btn.textContent="送出記帳";return showErr("日期格式不正確");}
+  const logMonth=dObj.getFullYear()+"-"+pad2(dObj.getMonth()+1);
+  const now=new Date();
+  const ts=dObj.getFullYear()+"/"+pad2(dObj.getMonth()+1)+"/"+pad2(dObj.getDate())+" "+pad2(now.getHours())+":"+pad2(now.getMinutes())+":"+pad2(now.getSeconds());
+  const payload={action:"write",person:selPerson,category:selCat,categoryLabel:catLabel(selCat),amount:amt,note:note,month:logMonth,ts:ts};
+  const personSel=selPerson, catSel=catLabel(selCat);
+  const dateTag=(logMonth===MONTH)?"":"（"+(dObj.getMonth()+1)+"/"+dObj.getDate()+"）";
   jsonpWrite(payload, function(){
     // success
-    entries.push({person:selPerson,category:selCat,categoryLabel:catLabel(selCat),amount:amt,note:note,month:MONTH,timestamp:new Date().toLocaleString("zh-TW")});
+    entries.push({person:personSel,category:payload.category,categoryLabel:catSel,amount:amt,note:note,month:logMonth,timestamp:ts});
     document.getElementById("amt-input").value="";
     document.getElementById("note-input").value="";
+    document.getElementById("date-input").value=todayStr();
     selPerson="";selCat="";
     document.querySelectorAll(".person-btn").forEach(b=>b.className="person-btn");
     document.querySelectorAll(".cat-btn").forEach(b=>b.classList.remove("active"));
     btn.disabled=false;btn.textContent="送出記帳";
     updateDashTab();
-    openSumSheet();
+    showToast("✓ 已記錄　"+personSel+"・"+catSel+"　$"+amt.toLocaleString()+dateTag,"ok",true);
     setTimeout(()=>fetchData(), 2000);
   }, function(err){
     showToast("送出失敗："+err,"err");
@@ -378,9 +435,10 @@ function submitEntry(){
 }
 
 // ── summary sheet ──────────────────────────────────────────────────────
-function openSumSheet(){
-  document.getElementById("sum-title").textContent=fmtMonth(MONTH)+" 收支概況";
-  document.getElementById("sum-body").innerHTML=buildSummaryHTML();
+function openSumSheet(mk){
+  mk = mk || MONTH;
+  document.getElementById("sum-title").textContent=fmtMonth(mk)+" 收支概況";
+  document.getElementById("sum-body").innerHTML=buildSummaryHTML(mk);
   document.getElementById("sum-overlay").classList.remove("hidden");
 }
 function closeSumSheet(){document.getElementById("sum-overlay").classList.add("hidden");}
@@ -491,7 +549,8 @@ function normalizeMonth(m){
   }catch(e){}
   return s;
 }
-function monthExpenses(){return entries.filter(e=>normalizeMonth(e.month)===MONTH&&e.category!=="settle");}
+function expensesOf(mk){return entries.filter(e=>normalizeMonth(e.month)===mk&&e.category!=="settle");}
+function monthExpenses(){return expensesOf(MONTH);}
 function monthAll()     {return entries.filter(e=>normalizeMonth(e.month)===MONTH);}
 
 function renderDashboard(){
@@ -518,29 +577,17 @@ function renderSummaryCard(){
   drawPie(bycat,total);drawBars(bycat);drawHistory();
 }
 
-function buildSummaryHTML(){
-  const me=monthExpenses();
+function buildSummaryHTML(mk){
+  const me=expensesOf(mk);
   const total=me.reduce((s,e)=>s+Number(e.amount),0);
   const anAmt=me.filter(e=>e.person==="安").reduce((s,e)=>s+Number(e.amount),0);
   const zoAmt=me.filter(e=>e.person==="佐").reduce((s,e)=>s+Number(e.amount),0);
   const map={};me.forEach(e=>{map[e.category]=(map[e.category]||0)+Number(e.amount);});
   const bycat=CATS.filter(c=>map[c.code]).map(c=>({name:c.label,value:map[c.code],code:c.code})).sort((a,b)=>b.value-a.value);
-  let h=`<div style="display:flex;gap:10px;margin-bottom:12px">
-    <div style="flex:1;background:#FEF4EA;border:1px solid rgba(201,123,58,.2);border-radius:12px;padding:12px 14px">
-      <div style="font-size:11px;color:#B09070;margin-bottom:3px">本月總支出</div>
-      <div style="font-size:20px;font-weight:700;color:#C97B3A">NT$ ${total.toLocaleString()}</div>
-      <div style="font-size:11px;color:#B09070;margin-top:2px">共 ${me.length} 筆</div>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:8px;flex:1">
-      <div style="flex:1;background:#FEF4EA;border:1px solid rgba(201,123,58,.2);border-radius:10px;padding:8px 12px">
-        <div style="font-size:11px;color:#B09070">安</div>
-        <div style="font-size:14px;font-weight:700;color:#C97B3A">NT$ ${anAmt.toLocaleString()}</div>
-      </div>
-      <div style="flex:1;background:#EAF6F5;border:1px solid rgba(74,143,138,.2);border-radius:10px;padding:8px 12px">
-        <div style="font-size:11px;color:#B09070">佐</div>
-        <div style="font-size:14px;font-weight:700;color:#4A8F8A">NT$ ${zoAmt.toLocaleString()}</div>
-      </div>
-    </div>
+  let h=`<div class="m3">
+    <div class="mc"><div class="ml">本月總支出</div><div class="mn">$${total.toLocaleString()}</div><div class="mn-sub">共 ${me.length} 筆</div></div>
+    <div class="mc"><div class="ml">安</div><div class="mn ani">$${anAmt.toLocaleString()}</div></div>
+    <div class="mc"><div class="ml">佐</div><div class="mn zoi">$${zoAmt.toLocaleString()}</div></div>
   </div>`;
   if(bycat.length) h+=buildInlinePie(bycat,total);
   return h;
@@ -558,15 +605,15 @@ function buildInlinePie(bycat,total){
     else{paths+=`<path d="M0,0 L${x1},${y1} A${r},${r},0,${lg},1,${x2},${y2} Z" fill="${PAL[i%PAL.length]}"/>`;}
     start+=slice;
   });
-  let leg=bycat.map((c,i)=>`<div style="display:flex;align-items:center;gap:5px;font-size:12px;margin:0 14px 6px 0">
-    <div style="width:8px;height:8px;border-radius:2px;background:${PAL[i%PAL.length]};flex-shrink:0"></div>
-    <span style="color:#7A6048">${c.name}</span>
-    <span style="font-weight:700;color:#3E2A14">${total>0?Math.round(c.value/total*100):0}%</span>
+  let leg=bycat.map((c,i)=>`<div class="legend-item">
+    <div class="legend-dot" style="background:${PAL[i%PAL.length]}"></div>
+    <span style="color:var(--t2)">${c.name}</span>
+    <span style="font-weight:700;color:var(--t1)">${total>0?Math.round(c.value/total*100):0}%</span>
   </div>`).join("");
-  return `<div style="font-size:11px;color:#B09070;letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-bottom:8px">類別分佈</div>
+  return `<div class="section-lbl" style="margin-top:4px">類別分佈</div>
   <div style="display:flex;justify-content:center;margin:4px 0">
-    <svg width="120" height="120" viewBox="-60 -60 120 120">${paths}<circle cx="0" cy="0" r="26" fill="#FFFDF8"/></svg>
-  </div><div style="display:flex;flex-wrap:wrap;margin-top:4px">${leg}</div>`;
+    <svg width="120" height="120" viewBox="-60 -60 120 120">${paths}<circle cx="0" cy="0" r="26" style="fill:var(--sf)"/></svg>
+  </div><div class="chart-legend">${leg}</div>`;
 }
 
 function drawPie(bycat,total){
@@ -582,26 +629,25 @@ function drawPie(bycat,total){
     else{h+=`<path d="M0,0 L${x1},${y1} A${r},${r},0,${lg},1,${x2},${y2} Z" fill="${PAL[i%PAL.length]}"/>`;}
     start+=slice;
   });
-  h+=`<circle cx="0" cy="0" r="30" fill="#FFFDF8"/>`;
+  h+=`<circle cx="0" cy="0" r="30" style="fill:var(--sf)"/>`;
   svg.innerHTML=h;
   document.getElementById("pie-legend").innerHTML=bycat.map((c,i)=>`
     <div class="legend-item"><div class="legend-dot" style="background:${PAL[i%PAL.length]}"></div>
-    <span style="color:#7A6048">${c.name}</span>
-    <span style="font-weight:700;color:#3E2A14">${total>0?Math.round(c.value/total*100):0}%</span></div>`).join("");
+    <span style="color:var(--t2)">${c.name}</span>
+    <span style="font-weight:700;color:var(--t1)">${total>0?Math.round(c.value/total*100):0}%</span></div>`).join("");
 }
 
 function drawBars(bycat){
-  const svg=document.getElementById("bar-svg");
-  if(!bycat.length){svg.innerHTML="";svg.setAttribute("height","0");return;}
-  const W=svg.parentElement.clientWidth||320,lw=96,rp=52,bw=W-lw-rp,rh=30,gap=6,max=bycat[0].value;
-  const th=bycat.length*(rh+gap);
-  svg.setAttribute("height",th);svg.setAttribute("viewBox",`0 0 ${W} ${th}`);
-  svg.innerHTML=bycat.map((c,i)=>{
-    const y=i*(rh+gap),bwi=max>0?Math.round((c.value/max)*bw):0;
-    return `<text x="${lw-6}" y="${y+rh/2+4}" text-anchor="end" font-size="11" fill="#7A6048" font-family="inherit">${c.name}</text>
-    <rect x="${lw}" y="${y+4}" width="${bwi}" height="${rh-8}" rx="4" fill="${PAL[i%PAL.length]}"/>
-    <text x="${lw+bwi+5}" y="${y+rh/2+4}" font-size="11" fill="#7A6048" font-family="inherit">${c.value.toLocaleString()}</text>`;
-  }).join("");
+  const el=document.getElementById("cat-detail");
+  if(!el) return;
+  if(!bycat.length){el.innerHTML="";return;}
+  const max=bycat[0].value;
+  el.innerHTML=bycat.map((c,i)=>`<div class="cat-row">
+    <div class="cat-dot" style="background:${PAL[i%PAL.length]}"></div>
+    <span class="cat-name">${c.name}</span>
+    <div class="cat-bar-wrap"><div class="cat-bar" style="width:${max>0?Math.round(c.value/max*100):0}%;background:${PAL[i%PAL.length]}"></div></div>
+    <span class="cat-amt">$${c.value.toLocaleString()}</span>
+  </div>`).join("");
 }
 
 let historyExpanded = false;
@@ -643,20 +689,20 @@ function drawHistory(){
   document.getElementById("history-list").innerHTML = shown.map(e=>{
     const isS  = e.category==="settle";
     const color= isS?"#7A6BAA":(PC[e.person]||"#C97B3A");
-    const bg   = isS?"#F0EEF8":(e.person==="安"?"#FEF4EA":"#EAF6F5");
+    const bg   = isS?"var(--pul)":(e.person==="安"?"var(--anl)":"var(--zol)");
     const icon = isS
-      ?`<svg width="16" height="16" viewBox="0 0 24 24" fill="#7A6BAA"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>`
+      ?`<svg width="16" height="16" viewBox="0 0 24 24" style="fill:var(--pu)"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>`
       :`<img src="${e.person==='安'?IMG_AN:IMG_ZO}" style="width:24px;height:24px;border-radius:50%;object-fit:cover"/>`;
     const ts = formatTimestamp(e.timestamp);
     return `<div class="hist-row">
-      <div class="hist-icon" style="background:${bg};border:1px solid ${color}44">${icon}</div>
+      <div class="hist-icon" style="background:${bg};border:1px solid var(--bd)">${icon}</div>
       <div style="flex:1;min-width:0">
         <div class="hist-cat">${e.categoryLabel||catLabel(e.category)}</div>
         ${e.note?`<div class="hist-note">${e.note}</div>`:""}
-        ${ts?`<div style="font-size:10px;color:#C0A888;margin-top:2px">${ts}</div>`:""}
+        ${ts?`<div style="font-size:10px;color:var(--t3);margin-top:2px">${ts}</div>`:""}
       </div>
       <div>
-        <div class="hist-amt" style="color:${color}">NT$ ${Number(e.amount).toLocaleString()}</div>
+        <div class="hist-amt" style="color:${color}">$${Number(e.amount).toLocaleString()}</div>
         <div class="hist-who">${e.person}</div>
       </div>
     </div>`;
@@ -673,7 +719,6 @@ function toggleSettleHist(){
 function renderSettleHistList(){
   const allSettle = entries.filter(e=>e.category==="settle");
   const histDiv   = document.getElementById("settle-history");
-  const toggleBtn = document.getElementById("settle-hist-toggle");
   if(!allSettle.length){ histDiv.style.display="none"; return; }
 
   const sorted  = [...allSettle].reverse();
@@ -683,8 +728,8 @@ function renderSettleHistList(){
   histDiv.style.display = "block";
   histDiv.innerHTML =
     `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <div style="font-size:11px;color:#7A6BAA;font-weight:700;letter-spacing:.06em;text-transform:uppercase">結算紀錄</div>
-      ${hasMore?`<button id="settle-hist-toggle" onclick="toggleSettleHist()" style="font-size:11px;color:#7A6BAA;background:transparent;border:none;cursor:pointer">
+      <div style="font-size:11px;color:var(--pu);font-weight:700;letter-spacing:.06em;text-transform:uppercase">結算紀錄</div>
+      ${hasMore?`<button id="settle-hist-toggle" onclick="toggleSettleHist()" style="font-size:11px;color:var(--pu);background:transparent;border:none;cursor:pointer">
         ${settleHistExpanded?`收合 ▴`:`顯示全部 ${sorted.length} 筆 ▾`}
       </button>`:""}
     </div>`+
@@ -692,13 +737,13 @@ function renderSettleHistList(){
       const isAnPay = e.person==="安";
       const dirText = isAnPay ? "安 → 佐" : "佐 → 安";
       const noteClean = (e.note||"").replace(/[安佐]→[安佐]/,"").replace("已轉帳","").trim();
-      return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#7A6048;padding:6px 0;border-bottom:1px solid rgba(122,107,170,.1)">
+      return `<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--t2);padding:6px 0;border-bottom:1px solid var(--bd)">
         <div>
-          <span style="font-weight:700;color:#7A6BAA">${dirText}</span>
-          <span style="color:#B09070;margin-left:6px">${normalizeMonth(e.month)}</span>
-          ${noteClean?`<div style="font-size:11px;color:#B09070;margin-top:1px">${noteClean}</div>`:""}
+          <span style="font-weight:700;color:var(--pu)">${dirText}</span>
+          <span style="color:var(--t3);margin-left:6px">${normalizeMonth(e.month)}</span>
+          ${noteClean?`<div style="font-size:11px;color:var(--t3);margin-top:1px">${noteClean}</div>`:""}
         </div>
-        <span style="font-weight:700;color:#7A6BAA;flex-shrink:0;margin-left:8px">NT$ ${Number(e.amount).toLocaleString()}</span>
+        <span style="font-weight:700;color:var(--pu);flex-shrink:0;margin-left:8px;font-family:'DM Mono',monospace">$${Number(e.amount).toLocaleString()}</span>
       </div>`;
     }).join("");
 }
@@ -710,48 +755,44 @@ function renderSettleCard(){
   if(!allExp.length){ card.classList.remove("visible"); return; }
   card.classList.add("visible");
 
-  // raw spend per person (all time)
   const raw={"安":0,"佐":0};
   allExp.forEach(e=>{ raw[e.person]=(raw[e.person]||0)+Number(e.amount); });
 
-  // effective: each settle entry — payer = person field, receiver = the other one
   const eff={...raw};
   allSettle.forEach(e=>{
     const payer = e.person;
     const recv  = payer==="安" ? "佐" : "安";
     const amt   = Number(e.amount);
-    eff[payer] = (eff[payer]||0) + amt;   // payer's burden increases
-    eff[recv]  = (eff[recv] ||0) - amt;   // receiver's burden decreases
+    eff[payer] = (eff[payer]||0) + amt;
+    eff[recv]  = (eff[recv] ||0) - amt;
   });
 
   const total=raw["安"]+raw["佐"], fair=total/2;
-  const diff=eff["安"]-eff["佐"];   // positive → 安 effective spend > 佐 → 佐 owes 安
+  const diff=eff["安"]-eff["佐"];
   const suggested=Math.abs(Math.round(diff/2));
   const payer=diff>0?"佐":"安";
   const recv =diff>0?"安":"佐";
-
-  // per-person blocks removed per request
 
   const box=document.getElementById("settle-amount-box");
   const trigBtn=document.getElementById("settle-trigger-btn");
 
   if(suggested===0){
-    box.innerHTML=`<div style="color:#5A8A5A;font-size:14px;font-weight:700;padding:4px 0">✓ 累積已結清，兩人平衡！</div>`;
+    box.innerHTML=`<div style="color:var(--g);font-size:14px;font-weight:700;padding:4px 0">✓ 累積已結清，兩人平衡！</div>`;
     trigBtn.style.display="none";
   } else {
     box.innerHTML=`
-      <div style="font-size:12px;color:#B09070;margin-bottom:6px">累積需要轉帳</div>
-      <div style="font-size:13px;color:#7A6048;margin-bottom:10px">
+      <div style="font-size:12px;color:var(--t3);margin-bottom:6px">累積需要轉帳</div>
+      <div style="font-size:13px;color:var(--t2);margin-bottom:10px">
         <b style="color:${PC[payer]}">${payer}</b> 需要給 <b style="color:${PC[recv]}">${recv}</b>
       </div>
-      <div style="font-size:11px;color:#B09070;margin-bottom:6px">建議金額（可修改成整數）</div>
+      <div style="font-size:11px;color:var(--t3);margin-bottom:6px">建議金額（可修改成整數）</div>
       <div style="display:flex;align-items:center;gap:8px;justify-content:center">
-        <span style="font-size:14px;color:#7A6048">NT$</span>
+        <span style="font-size:14px;color:var(--t2)">NT$</span>
         <input id="settle-custom-amt" type="number" inputmode="numeric"
           value="${suggested}"
-          style="width:130px;padding:8px 12px;border-radius:10px;border:1.5px solid #7A6BAA;font-size:20px;font-weight:700;color:#7A6BAA;text-align:center;font-family:inherit;outline:none;background:#fff"/>
+          style="width:130px;padding:8px 12px;border-radius:10px;border:1.5px solid var(--pu);font-size:20px;font-weight:700;color:var(--pu);text-align:center;font-family:'DM Mono',monospace;outline:none;background:var(--sf)"/>
       </div>
-      <div style="font-size:11px;color:#B09070;margin-top:8px">結算後累積餘額重新計算</div>`;
+      <div style="font-size:11px;color:var(--t3);margin-top:8px">結算後累積餘額重新計算</div>`;
     trigBtn.style.display="block";
     trigBtn.dataset.payer=payer;
     trigBtn.dataset.recv=recv;
@@ -767,7 +808,7 @@ function showSettleConfirm(){
   const payer=btn.dataset.payer, recv=btn.dataset.recv;
   const inputEl=document.getElementById("settle-custom-amt");
   const amt=inputEl ? Math.abs(Number(inputEl.value)||0) : Number(btn.dataset.gap);
-  if(!amt||amt<=0){ inputEl&&(inputEl.style.border="1.5px solid #C04A2A"); return; }
+  if(!amt||amt<=0){ inputEl&&(inputEl.style.border="1.5px solid var(--r)"); return; }
   btn.dataset.gap=amt;
   document.getElementById("settle-confirm-desc").textContent=
     `將記錄「${payer} 已給 ${recv} NT$ ${amt.toLocaleString()}」到試算表，累積餘額重新計算。`;
@@ -802,27 +843,21 @@ function updateDashTab(){
 function renderAnalysis(){
   const expenses = entries.filter(e=>e.category!=="settle");
   if(!expenses.length){
-    document.getElementById("analysis-content").innerHTML=`<div style="text-align:center;padding:32px;color:#B09070;font-size:14px">請先同步資料</div>`;
+    document.getElementById("analysis-content").innerHTML=`<div style="text-align:center;padding:32px;color:var(--t3);font-size:14px">請先同步資料</div>`;
     return;
   }
 
-  // build monthly totals map: { "2025-03": { total, an, zo, cats:{} } }
   const monthly={};
   expenses.forEach(e=>{
     const m=normalizeMonth(e.month);
     if(!m) return;
-    if(!monthly[m]) monthly[m]={total:0,an:0,zo:0,cats:{}};
-    const amt=Number(e.amount);
-    monthly[m].total+=amt;
-    if(e.person==="安") monthly[m].an+=amt;
-    if(e.person==="佐") monthly[m].zo+=amt;
-    monthly[m].cats[e.category]=(monthly[m].cats[e.category]||0)+amt;
+    if(!monthly[m]) monthly[m]={total:0};
+    monthly[m].total+=Number(e.amount);
   });
 
   const allMonths=Object.keys(monthly).sort();
   const years=[...new Set(allMonths.map(m=>m.slice(0,4)))].sort().reverse();
 
-  // populate year selector
   const sel=document.getElementById("analysis-year");
   const curSelYear=sel.value||years[0];
   sel.innerHTML=years.map(y=>`<option value="${y}" ${y===curSelYear?"selected":""}>${y} 年</option>`).join("");
@@ -839,151 +874,91 @@ function renderAnalysis(){
   const maxVal=Math.max(...curData.map(d=>d?d.total:0),...prevData.map(d=>d?d.total:0),1);
   const barW=100/12;
 
-  // bar chart SVG
   const svgH=180, labelH=20, barArea=svgH-labelH-10;
   let bars="";
   MONTHS.forEach((m,i)=>{
     const cur=curData[i], prev=prevData[i];
-    const x=i*barW;
-    const bw=barW*0.38;
+    const x=i*barW, bw=barW*0.38;
     if(prev){
-      const bh=Math.round((prev.total/maxVal)*barArea);
-      const by=barArea-bh+10;
-      bars+=`<rect x="${x+barW*0.08}%" y="${by}" width="${bw}%" height="${bh}" rx="2" fill="#D5C5E8" opacity="0.8"/>`;
+      const bh=Math.round((prev.total/maxVal)*barArea), by=barArea-bh+10;
+      bars+=`<rect x="${x+barW*0.08}%" y="${by}" width="${bw}%" height="${bh}" rx="2" style="fill:var(--t3)" opacity="0.5"/>`;
     }
     if(cur){
-      const bh=Math.round((cur.total/maxVal)*barArea);
-      const by=barArea-bh+10;
-      bars+=`<rect x="${x+barW*0.08+bw+barW*0.04}%" y="${by}" width="${bw}%" height="${bh}" rx="2" fill="#7A6BAA"/>`;
+      const bh=Math.round((cur.total/maxVal)*barArea), by=barArea-bh+10;
+      bars+=`<rect x="${x+barW*0.08+bw+barW*0.04}%" y="${by}" width="${bw}%" height="${bh}" rx="2" style="fill:var(--pu)"/>`;
     }
-    bars+=`<text x="${x+barW/2}%" y="${svgH-2}" text-anchor="middle" font-size="9" fill="#B09070" font-family="inherit">${monthLabels[i]}</text>`;
+    bars+=`<text x="${x+barW/2}%" y="${svgH-2}" text-anchor="middle" font-size="9" style="fill:var(--t3)" font-family="inherit">${monthLabels[i]}</text>`;
   });
 
-  // year total comparison
   const curTotal=curData.reduce((s,d)=>s+(d?d.total:0),0);
   const prevTotal=prevData.reduce((s,d)=>s+(d?d.total:0),0);
+  const monthsWithData=curData.filter(d=>d).length||1;
   const diff=curTotal-prevTotal;
   const diffSign=diff>=0?"+":"";
-  const diffColor=diff>=0?"#B03A20":"#5A8A5A";
+  const diffCls=diff>0?"ri":diff<0?"gi":"";
 
-  // monthly table
-  let tableRows="";
+  // 逐月比較（同期風格列）
+  let monRows="";
   MONTHS.forEach((m,i)=>{
     const cur=curData[i], prev=prevData[i];
     if(!cur&&!prev) return;
-    const curAmt=cur?cur.total:0, prevAmt=prev?prev.total:0;
-    const d=curAmt-prevAmt;
-    const dc=d>=0?"#C04A2A":"#5A8A5A";
-    const ds=(d>=0?"+":"")+d.toLocaleString();
-    tableRows+=`<tr style="border-bottom:1px solid #F0E8D8">
-      <td style="padding:7px 4px;font-size:13px;color:#7A6048;font-weight:600">${monthLabels[i]}</td>
-      <td style="padding:7px 4px;text-align:right;font-size:13px;color:#7A6BAA;font-weight:700">${curAmt?'NT$ '+curAmt.toLocaleString():'-'}</td>
-      <td style="padding:7px 4px;text-align:right;font-size:12px;color:#B09070">${prevAmt?'NT$ '+prevAmt.toLocaleString():'-'}</td>
-      <td style="padding:7px 4px;text-align:right;font-size:12px;color:${dc};font-weight:600">${curAmt&&prevAmt?ds:'-'}</td>
-    </tr>`;
+    const curAmt=cur?cur.total:0, prevAmt=prev?prev.total:0, d=curAmt-prevAmt;
+    const cls=(curAmt&&prevAmt)?(d>50?"up":d<-50?"dn":"eq"):"eq";
+    const ds=(curAmt&&prevAmt)?((d>=0?"+":"")+"$"+Math.abs(d).toLocaleString()):"—";
+    monRows+=`<div class="yoy-row">
+      <span class="yoy-lbl">${monthLabels[i]}</span>
+      <div class="yoy-vals">
+        <span class="yoy-cur">${curAmt?'$'+curAmt.toLocaleString():'—'}</span>
+        <span class="yoy-diff ${cls}">${ds}</span>
+      </div></div>`;
   });
 
-  // year-level category totals (current year)
-  const catTotals={};
-  expenses.filter(e=>normalizeMonth(e.month)&&normalizeMonth(e.month).startsWith(selYear)).forEach(e=>{
-    catTotals[e.category]=(catTotals[e.category]||0)+Number(e.amount);
-  });
-  const prevCatTotals={};
-  expenses.filter(e=>normalizeMonth(e.month)&&normalizeMonth(e.month).startsWith(prevYear)).forEach(e=>{
-    prevCatTotals[e.category]=(prevCatTotals[e.category]||0)+Number(e.amount);
-  });
-
-  const catRows=CATS.map(c=>{
-    const cur=catTotals[c.code]||0, prev=prevCatTotals[c.code]||0;
-    if(!cur&&!prev) return "";
-    const d=cur-prev;
-    const dc=d>0?"#C04A2A":d<0?"#5A8A5A":"#B09070";
-    const ds=d>0?"+"+d.toLocaleString():d<0?d.toLocaleString():"-";
-    const pct=curTotal>0?Math.round(cur/curTotal*100):0;
-    const barW=curTotal>0?Math.round(cur/curTotal*100):0;
-    return `<tr style="border-bottom:1px solid #F5EFE3">
-      <td style="padding:6px 4px;font-size:12px;color:#7A6048;white-space:nowrap">${c.label}</td>
-      <td style="padding:6px 4px;min-width:80px">
-        <div style="display:flex;align-items:center;gap:6px">
-          <div style="flex:1;height:6px;background:#F0E8D8;border-radius:3px;overflow:hidden">
-            <div style="width:${barW}%;height:100%;background:#7A6BAA;border-radius:3px"></div>
-          </div>
-          <span style="font-size:10px;color:#B09070;flex-shrink:0;min-width:22px;text-align:right">${pct}%</span>
-        </div>
-      </td>
-      <td style="padding:6px 4px;text-align:right;font-size:12px;font-weight:700;color:#3E2A14;white-space:nowrap">${cur?'NT$ '+cur.toLocaleString():'-'}</td>
-      <td style="padding:6px 4px;text-align:right;font-size:11px;color:#B09070;white-space:nowrap">${prev?'NT$ '+prev.toLocaleString():'-'}</td>
-      <td style="padding:6px 4px;text-align:right;font-size:11px;color:${dc};font-weight:600;white-space:nowrap">${cur&&prev?ds:'-'}</td>
-    </tr>`;
+  // 類別 今年 vs 去年（同期風格列）
+  const catTotals={}, prevCatTotals={};
+  expenses.filter(e=>{const m=normalizeMonth(e.month);return m&&m.startsWith(selYear);}).forEach(e=>{catTotals[e.category]=(catTotals[e.category]||0)+Number(e.amount);});
+  expenses.filter(e=>{const m=normalizeMonth(e.month);return m&&m.startsWith(prevYear);}).forEach(e=>{prevCatTotals[e.category]=(prevCatTotals[e.category]||0)+Number(e.amount);});
+  const allCat=[...new Set([...Object.keys(catTotals),...Object.keys(prevCatTotals)])].sort((a,b)=>(catTotals[b]||0)-(catTotals[a]||0));
+  const catRows=allCat.map(code=>{
+    const cur=catTotals[code]||0, prev=prevCatTotals[code]||0, d=cur-prev;
+    const cls=d>50?"up":d<-50?"dn":"eq";
+    const ds=d===0?"—":((d>=0?"+":"")+"$"+Math.abs(d).toLocaleString());
+    return `<div class="yoy-row">
+      <span class="yoy-lbl">${catLabel(code)}</span>
+      <div class="yoy-vals">
+        <span class="yoy-cur">$${cur.toLocaleString()}</span>
+        <span class="yoy-diff ${cls}">${ds}</span>
+      </div></div>`;
   }).join("");
 
   document.getElementById("analysis-content").innerHTML=`
-    <div style="display:flex;gap:10px;margin-bottom:16px">
-      <div style="flex:1;background:#F0EEF8;border:1px solid rgba(122,107,170,.2);border-radius:12px;padding:12px 14px">
-        <div style="font-size:11px;color:#B09070;margin-bottom:3px">${selYear} 年總支出</div>
-        <div style="font-size:18px;font-weight:700;color:#7A6BAA">NT$ ${curTotal.toLocaleString()}</div>
-      </div>
-      <div style="flex:1;background:#FBF7EF;border:1px solid #E8DECA;border-radius:12px;padding:12px 14px">
-        <div style="font-size:11px;color:#B09070;margin-bottom:3px">vs ${prevYear} 年</div>
-        <div style="font-size:18px;font-weight:700;color:${diffColor}">${prevTotal?diffSign+diff.toLocaleString():'—'}</div>
-        ${prevTotal?`<div style="font-size:10px;color:#B09070;margin-top:1px">${prevYear} 年 NT$ ${prevTotal.toLocaleString()}</div>`:''}
-      </div>
+    <div class="m3">
+      <div class="mc"><div class="ml">${selYear} 支出</div><div class="mn pui">$${curTotal.toLocaleString()}</div>${prevTotal?`<div class="mn-sub ${diffCls}">${diffSign}$${Math.abs(diff).toLocaleString()}</div>`:''}</div>
+      <div class="mc"><div class="ml">${prevYear} 支出</div><div class="mn" style="color:var(--t2)">${prevTotal?'$'+prevTotal.toLocaleString():'—'}</div></div>
+      <div class="mc"><div class="ml">月均（${selYear}）</div><div class="mn">$${Math.round(curTotal/monthsWithData).toLocaleString()}</div></div>
     </div>
 
-    <div style="margin-bottom:16px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
-        <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#7A6048">
-          <div style="width:10px;height:10px;border-radius:2px;background:#7A6BAA"></div>${selYear}
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:#B09070">
-          <div style="width:10px;height:10px;border-radius:2px;background:#D5C5E8"></div>${prevYear}
-        </div>
+    <div style="margin:4px 0 18px">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t2)"><div style="width:10px;height:10px;border-radius:2px;background:var(--pu)"></div>${selYear}</div>
+        <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--t3)"><div style="width:10px;height:10px;border-radius:2px;background:var(--t3);opacity:.5"></div>${prevYear}</div>
       </div>
       <svg width="100%" height="${svgH}" style="display:block;overflow:visible">${bars}</svg>
     </div>
 
-    <div style="font-size:11px;color:#B09070;letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-bottom:8px">逐月比較</div>
-    <table style="width:100%;border-collapse:collapse;margin-bottom:20px">
-      <thead>
-        <tr style="border-bottom:2px solid #E8DECA">
-          <th style="padding:6px 4px;text-align:left;font-size:11px;color:#B09070;font-weight:600"></th>
-          <th style="padding:6px 4px;text-align:right;font-size:11px;color:#7A6BAA;font-weight:600">${selYear}</th>
-          <th style="padding:6px 4px;text-align:right;font-size:11px;color:#B09070;font-weight:600">${prevYear}</th>
-          <th style="padding:6px 4px;text-align:right;font-size:11px;color:#B09070;font-weight:600">差異</th>
-        </tr>
-      </thead>
-      <tbody>${tableRows}</tbody>
-      <tfoot>
-        <tr style="background:#FAF6EE">
-          <td style="padding:8px 4px;font-size:12px;font-weight:700;color:#3E2A14">全年</td>
-          <td style="padding:8px 4px;text-align:right;font-size:13px;font-weight:700;color:#7A6BAA">NT$ ${curTotal.toLocaleString()}</td>
-          <td style="padding:8px 4px;text-align:right;font-size:12px;color:#B09070">${prevTotal?'NT$ '+prevTotal.toLocaleString():'-'}</td>
-          <td style="padding:8px 4px;text-align:right;font-size:12px;font-weight:600;color:${diffColor}">${prevTotal?diffSign+diff.toLocaleString():'-'}</td>
-        </tr>
-      </tfoot>
-    </table>
+    <div class="section-lbl">逐月比較</div>
+    <div class="cat-list" style="margin-bottom:18px">${monRows||'<div style="color:var(--t3);font-size:13px;padding:8px 0">無資料</div>'}</div>
 
-    <div style="font-size:11px;color:#B09070;letter-spacing:.07em;text-transform:uppercase;font-weight:700;margin-bottom:8px">類別分佈（${selYear}）</div>
-    <table style="width:100%;border-collapse:collapse">
-      <thead>
-        <tr style="border-bottom:2px solid #E8DECA">
-          <th style="padding:6px 4px;text-align:left;font-size:11px;color:#B09070;font-weight:600">類別</th>
-          <th style="padding:6px 4px;font-weight:600"></th>
-          <th style="padding:6px 4px;text-align:right;font-size:11px;color:#7A6BAA;font-weight:600">${selYear}</th>
-          <th style="padding:6px 4px;text-align:right;font-size:11px;color:#B09070;font-weight:600">${prevYear}</th>
-          <th style="padding:6px 4px;text-align:right;font-size:11px;color:#B09070;font-weight:600">差異</th>
-        </tr>
-      </thead>
-      <tbody>${catRows}</tbody>
-    </table>`;
+    <div class="section-lbl">各類別　${selYear} vs ${prevYear}</div>
+    <div class="cat-list">${catRows||'<div style="color:var(--t3);font-size:13px;padding:8px 0">無資料</div>'}</div>`;
 }
 
 let toastTimer;
-function showToast(msg,type="ok"){
+function showToast(msg,type="ok",big=false){
   const el=document.getElementById("toast");
-  el.textContent=msg;el.style.background=type==="err"?"#B03A20":"#2E6B66";
+  el.textContent=msg;el.style.background=type==="err"?"var(--r)":"var(--zo)";
+  el.classList.toggle("big",!!big);
   el.classList.add("show");clearTimeout(toastTimer);
-  toastTimer=setTimeout(()=>el.classList.remove("show"),4000);
+  toastTimer=setTimeout(()=>el.classList.remove("show"), big?2800:4000);
 }
 
 // start
