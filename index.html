@@ -120,6 +120,9 @@ input[type=number]{-moz-appearance:textfield}
 #settle-card{background:var(--pul);border:1px solid var(--bd);border-radius:var(--ra);padding:20px;margin-bottom:14px;display:none}
 #settle-card.visible{display:block}
 .settle-amount-box{background:var(--sf);border:1px solid var(--bds);border-radius:12px;padding:14px 16px;margin-bottom:14px;text-align:center}
+.dir-btn{flex:1;padding:11px;border-radius:10px;border:1px solid var(--bds);background:var(--sf2);color:var(--t2);font-size:14px;font-weight:600;transition:all .15s}
+.dir-btn:active{transform:scale(.97)}
+.dir-btn.active{border:1.5px solid var(--pu);background:var(--pul);color:var(--pu)}
 
 /* 明細列 */
 .hist-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bd)}
@@ -129,6 +132,8 @@ input[type=number]{-moz-appearance:textfield}
 .hist-note{font-size:11px;color:var(--t3);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hist-amt{font-size:15px;font-weight:700;text-align:right;font-family:'DM Mono',monospace}
 .hist-who{font-size:10px;color:var(--t3);margin-top:1px;text-align:right}
+.del-btn{background:none;border:none;color:var(--t3);font-size:14px;cursor:pointer;padding:4px 0 4px 8px;opacity:.5;flex-shrink:0;align-self:center}
+.del-btn:active{opacity:1;color:var(--r)}
 
 /* dash 狀態 */
 #dash-loading{text-align:center;padding:64px 24px;color:var(--t3)}
@@ -694,6 +699,7 @@ function drawHistory(){
       ?`<svg width="16" height="16" viewBox="0 0 24 24" style="fill:var(--pu)"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>`
       :`<img src="${e.person==='安'?IMG_AN:IMG_ZO}" style="width:24px;height:24px;border-radius:50%;object-fit:cover"/>`;
     const ts = formatTimestamp(e.timestamp);
+    const key = encodeURIComponent(JSON.stringify({person:e.person,category:e.category,amount:e.amount,note:e.note||"",month:e.month}));
     return `<div class="hist-row">
       <div class="hist-icon" style="background:${bg};border:1px solid var(--bd)">${icon}</div>
       <div style="flex:1;min-width:0">
@@ -701,12 +707,35 @@ function drawHistory(){
         ${e.note?`<div class="hist-note">${e.note}</div>`:""}
         ${ts?`<div style="font-size:10px;color:var(--t3);margin-top:2px">${ts}</div>`:""}
       </div>
-      <div>
+      <div style="text-align:right">
         <div class="hist-amt" style="color:${color}">$${Number(e.amount).toLocaleString()}</div>
         <div class="hist-who">${e.person}</div>
       </div>
+      <button class="del-btn" onclick="deleteEntry('${key}')" title="刪除這筆">✕</button>
     </div>`;
   }).join("");
+}
+
+function deleteEntry(key){
+  const r=JSON.parse(decodeURIComponent(key));
+  const label = r.category==="settle" ? "結算" : catLabel(r.category);
+  if(!confirm(`確定刪除這筆記錄？\n${r.person}・${label}　NT$ ${Number(r.amount).toLocaleString()}${r.note?"\n"+r.note:""}`)) return;
+  const payload={action:"delete",person:r.person,category:r.category,amount:r.amount,note:r.note||"",month:r.month};
+  jsonpWrite(payload, function(){
+    for(let i=entries.length-1;i>=0;i--){
+      const e=entries[i];
+      if(e.person===r.person && String(e.category)===String(r.category) && Number(e.amount)===Number(r.amount) && String(e.note||"")===String(r.note||"")){
+        entries.splice(i,1); break;
+      }
+    }
+    showToast("✓ 已刪除","ok",true);
+    updateDashTab();
+    if(curTab==="dashboard") renderDashboard();
+    if(curTab==="analysis") renderAnalysis();
+    setTimeout(()=>fetchData(),1500);
+  }, function(err){
+    showToast("刪除失敗："+err,"err");
+  });
 }
 
 let settleHistExpanded = false;
@@ -776,31 +805,39 @@ function renderSettleCard(){
   const box=document.getElementById("settle-amount-box");
   const trigBtn=document.getElementById("settle-trigger-btn");
 
-  if(suggested===0){
-    box.innerHTML=`<div style="color:var(--g);font-size:14px;font-weight:700;padding:4px 0">✓ 累積已結清，兩人平衡！</div>`;
-    trigBtn.style.display="none";
-  } else {
-    box.innerHTML=`
-      <div style="font-size:12px;color:var(--t3);margin-bottom:6px">累積需要轉帳</div>
-      <div style="font-size:13px;color:var(--t2);margin-bottom:10px">
-        <b style="color:${PC[payer]}">${payer}</b> 需要給 <b style="color:${PC[recv]}">${recv}</b>
-      </div>
-      <div style="font-size:11px;color:var(--t3);margin-bottom:6px">建議金額（可修改成整數）</div>
-      <div style="display:flex;align-items:center;gap:8px;justify-content:center">
-        <span style="font-size:14px;color:var(--t2)">NT$</span>
-        <input id="settle-custom-amt" type="number" inputmode="numeric"
-          value="${suggested}"
-          style="width:130px;padding:8px 12px;border-radius:10px;border:1.5px solid var(--pu);font-size:20px;font-weight:700;color:var(--pu);text-align:center;font-family:'DM Mono',monospace;outline:none;background:var(--sf)"/>
-      </div>
-      <div style="font-size:11px;color:var(--t3);margin-top:8px">結算後累積餘額重新計算</div>`;
-    trigBtn.style.display="block";
-    trigBtn.dataset.payer=payer;
-    trigBtn.dataset.recv=recv;
-    trigBtn.dataset.gap=suggested;
-  }
+  const balLine = suggested===0
+    ? `<div style="color:var(--g);font-size:13px;font-weight:700">✓ 目前累積已結清、兩人平衡</div>`
+    : `<div style="font-size:13px;color:var(--t2)">系統建議：<b style="color:${PC[payer]}">${payer}</b> 給 <b style="color:${PC[recv]}">${recv}</b> <span class="mono" style="color:var(--pu);font-weight:700">$${suggested.toLocaleString()}</span></div>`;
+  const defPayer = suggested>0 ? payer : "安";
+
+  box.innerHTML=`
+    <div style="margin-bottom:14px">${balLine}</div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:6px">這次是誰給誰</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button class="dir-btn" data-payer="安" onclick="setSettleDir('安')">安 → 佐</button>
+      <button class="dir-btn" data-payer="佐" onclick="setSettleDir('佐')">佐 → 安</button>
+    </div>
+    <div style="font-size:11px;color:var(--t3);margin-bottom:6px">金額（可自行修改）</div>
+    <div style="display:flex;align-items:center;gap:8px;justify-content:center">
+      <span style="font-size:14px;color:var(--t2)">NT$</span>
+      <input id="settle-custom-amt" type="number" inputmode="numeric" value="${suggested>0?suggested:''}" placeholder="0"
+        style="width:150px;padding:8px 12px;border-radius:10px;border:1.5px solid var(--pu);font-size:20px;font-weight:700;color:var(--pu);text-align:center;font-family:'DM Mono',monospace;outline:none;background:var(--sf)"/>
+    </div>`;
+  trigBtn.style.display="block";
+  trigBtn.dataset.gap=suggested;
+  setSettleDir(defPayer);
 
   hideSettleConfirm();
   renderSettleHistList();
+}
+
+function setSettleDir(payer){
+  const recv = payer==="安"?"佐":"安";
+  const trigBtn=document.getElementById("settle-trigger-btn");
+  if(trigBtn){ trigBtn.dataset.payer=payer; trigBtn.dataset.recv=recv; }
+  document.querySelectorAll("#settle-card .dir-btn").forEach(b=>{
+    b.classList.toggle("active", b.dataset.payer===payer);
+  });
 }
 
 function showSettleConfirm(){
