@@ -375,6 +375,7 @@ let isLoading  = false;
 let curTab     = "form";
 let dataLoaded = false;   // ★ 資料是否已載入過
 let pending    = [];      // ★ 已樂觀寫入、後端尚未確認的紀錄
+let submitting = false;   // ★ 送出中防連點（避免同一動作觸發兩次）
 
 function getMonthKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
 function fmtMonth(k){const[y,m]=k.split("-");return y+" 年 "+parseInt(m)+" 月";}
@@ -450,6 +451,7 @@ function showSuccess(msg){
 
 // ★ 樂觀更新：先回饋、後送出
 function submitEntry(){
+  if(submitting) return;   // ★ 送出中，忽略連續觸發（雙擊 / 連按 Enter）
   if(!selPerson)   return showErr("請選擇支出者");
   if(!selCat)      return showErr("請選擇類別");
   const amt=Number(document.getElementById("amt-input").value);
@@ -458,6 +460,7 @@ function submitEntry(){
   const dObj=new Date(dateVal+"T00:00:00");
   if(isNaN(dObj.getTime())) return showErr("日期格式不正確");
   showErr("");
+  submitting=true; setTimeout(()=>{submitting=false;}, 700);   // ★ 短暫上鎖，不影響連續記不同筆
 
   const note=document.getElementById("note-input").value;
   const logMonth=dObj.getFullYear()+"-"+pad2(dObj.getMonth()+1);
@@ -505,6 +508,9 @@ function closeSumSheet(){document.getElementById("sum-overlay").classList.add("h
 // ── JSONP write ────────────────────────────────────────────────────────
 function jsonpWrite(params, onSuccess, onError){
   const cbName = "gs_write_" + Date.now() + "_" + Math.floor(Math.random()*10000);
+  // ★ 每次寫入配一個唯一 wid。若這個 GET 被瀏覽器/網路重送，src 不變、wid 相同，
+  //   後端即可據此辨識為同一筆而去重（治本需搭配後端 dedup，見說明）。
+  const wid = params.wid || (Date.now().toString(36) + "_" + Math.random().toString(36).slice(2,10));
   const script  = document.createElement("script");
   const timer   = setTimeout(()=>{
     cleanup();
@@ -524,7 +530,7 @@ function jsonpWrite(params, onSuccess, onError){
     cleanup();
     (onError||function(){})("連線失敗");
   };
-  const qs = Object.entries({...params, callback: cbName, t: Date.now()})
+  const qs = Object.entries({...params, wid: wid, callback: cbName, t: Date.now()})
     .map(([k,v])=>encodeURIComponent(k)+"="+encodeURIComponent(v)).join("&");
   script.src = SCRIPT_URL + "?" + qs;
   document.head.appendChild(script);
